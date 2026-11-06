@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+@theme {
+	--breakpoint-md: 51.3125rem;
+
+	--color-ink: #07160a;
+	--color-cream: #f9f3d5;
+	--color-rust: #8a2b1d;
+
+	--font-pirate: 'Noailles Pirate', serif;
+	--font-pirate-3d: 'Noailles Pirate 3D', serif;
+	--font-times: 'Noailles Times', serif;
+	--font-literatura: 'Literatura Past', serif;
+}
+
+@utility paper {
+	border-image: url('/paper.png') 64 0 fill / calc((100vw - 32px) * 0.032) 0;
+
+	@variant md {
+		border-image: none;
+		background: url('/paper.png') center / 100% 100% no-repeat;
+	}
+}
+
+@font-face {
+	font-family: 'Literatura Past';
+	src: url('/fonts/LiteraturaPastBoldItalic.woff') format('woff');
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Noailles Pirate';
+	src: url('/fonts/Hershey-Noailles-pitchoun-pirate-0.65.otf') format('opentype');
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Noailles Pirate 3D';
+	src: url('/fonts/Hershey-Noailles-pitchoun-pirate-3D.otf') format('opentype');
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Noailles Times';
+	src: url('/fonts/Hershey-Noailles-Times-Duplex-Italic-Bold.otf') format('opentype');
+	font-display: swap;
+}
