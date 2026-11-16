@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_TABLE } from '$app/env/private';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 const EMAIL = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 const LIMIT = 20;
@@ -45,6 +45,50 @@ async function alreadySignedUp(email: string) {
 	return records.length > 0;
 }
 
+let signups: number | null = null;
+let countedAt = 0;
+let counting: Promise<unknown> | null = null;
+
+async function countSignups() {
+	let total = 0;
+	let offset = '';
+	do {
+		const params = new URLSearchParams({
+			pageSize: '100',
+			'fields[]': 'Email',
+			filterByFormula: '{Email} != ""'
+		});
+		if (offset) params.set('offset', offset);
+
+		const res = await airtable(`?${params}`);
+		if (!res.ok) throw new Error(`count ${res.status}: ${await res.text()}`);
+
+		const page = await res.json();
+		total += page.records.length;
+		offset = page.offset ?? '';
+	} while (offset);
+	return total;
+}
+
+function recount() {
+	counting ??= countSignups()
+		.then((n) => (signups = n))
+		.catch((err) => console.error("couldn't count signups:", err))
+		.finally(() => {
+			countedAt = Date.now();
+			counting = null;
+		});
+	return counting;
+}
+
+export const load: PageServerLoad = async () => {
+	if (Date.now() - countedAt > 60_000) {
+		const pending = recount();
+		if (signups === null) await pending;
+	}
+	return { signups };
+};
+
 export const actions: Actions = {
 	default: async ({ request, getClientAddress }) => {
 		const data = await request.formData();
@@ -72,6 +116,7 @@ export const actions: Actions = {
 					body: JSON.stringify({ fields: { Email: email } })
 				});
 				if (!res.ok) throw new Error(`create ${res.status}: ${await res.text()}`);
+				if (signups !== null) signups++;
 			}
 		} catch (err) {
 			console.error('airtable said no:', err);

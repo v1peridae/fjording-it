@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
-	let { form }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 	let sending = $state(false);
 </script>
 
@@ -40,8 +40,8 @@
 			aria-label="three birds flying over a fjord"
 		></div>
 
-		<section class="mt-7 w-full text-center md:mt-[3.5cqw] md:w-[58cqw]">
-			<h2 class="mb-3.5 text-[26px] md:mb-[2cqw] md:text-[3.6cqw]">do you wanna join them?</h2>
+		<section class="mt-7 w-full text-center md:mt-[2.5cqw] md:w-[58cqw]">
+			<h2 class="mb-3.5 -translate-y-3 text-[26px] md:mb-[1cqw] md:-translate-y-[1cqw] md:text-[3.6cqw]">do you wanna join them?</h2>
 			{#if form?.success}
 				<p class="grid h-12 place-items-center text-[16px] md:h-[5cqw] md:text-[max(1.8cqw,14px)]">
 					you're in! keep an eye on your inbox
@@ -79,16 +79,20 @@
 						i'm in
 					</button>
 				</form>
-				{#if form?.error}
-					<p class="mt-2.5 text-[14px] text-rust md:mt-[1cqw] md:text-[max(1.4cqw,13px)]">
-						{form.error}
-					</p>
-				{/if}
+			{/if}
+			{#if form?.error}
+				<p class="mt-2.5 text-[14px] text-rust md:mt-[0.8cqw] md:text-[max(1.4cqw,13px)]">
+					{form.error}
+				</p>
+			{:else if data.signups !== null}
+				<p class="mt-3 text-[22px] text-balance md:mt-[0.8cqw] md:text-[max(2.2cqw,17px)]">
+					{data.signups}/2000 <span class="whitespace-nowrap">sign ups</span> to launch
+				</p>
 			{/if}
 		</section>
 
 		<p
-			class="mt-7 text-center font-literatura text-[12px] font-bold tracking-[0.03em] text-balance italic md:absolute md:inset-x-0 md:top-[64.7cqw] md:mt-0 md:text-[max(1.2cqw,11px)] md:whitespace-nowrap"
+			class="mt-16 text-center font-literatura text-[12px] font-bold tracking-[0.03em] text-balance italic md:absolute md:inset-x-0 md:top-[66.6cqw] md:mt-0 md:text-[max(1.2cqw,11px)] md:whitespace-nowrap"
 		>made with love by @guac, @johnny and @lou from hack club</p>
 	</div>
 </main>
