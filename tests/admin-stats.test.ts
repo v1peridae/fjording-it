@@ -17,10 +17,15 @@ import {
 	adminAllowlist,
 	daysSinceFirstSignup,
 	formatSignupStats,
+	adminCallbackDecision,
 	isAdminEmail,
+	isAdminEntryEmail,
+	readSignups,
+	signupName,
+	summarizeSignups,
 	tallySignups,
 	type AirtablePage
-} from '../src/lib/server/signup-stats.ts';
+} from '../src/lib/signup-stats.ts';
 
 const SECRET = 'test-session-secret';
 
@@ -251,6 +256,112 @@ test('id token must be a verified email for this client', async () => {
 		}
 	});
 	assert.equal(fromUserinfo, 'johnny@hackclub.com');
+});
+
+test('charts use eastern time, keep the utc headline, and drop emails', async () => {
+	const now = new Date('2026-11-19T15:00:00.000Z');
+	const { count, events } = await readSignups(async () => ({
+		records: [
+			{
+				createdTime: '2026-11-19T04:30:00.000Z',
+				fields: { Email: 'secret@hackclub.com', Name: 'Ada Lovelace' }
+			},
+			{
+				createdTime: '2026-11-17T15:00:00.000Z',
+				fields: { Email: 'other@hackclub.com', Name: 'ada@hackclub.com', 'First Name': 'Grace', 'Last Name': 'H' }
+			},
+			{ createdTime: 'not-a-date', fields: { Email: 'counted@hackclub.com' } },
+			{ createdTime: '2026-11-17T16:30:00.000Z', fields: { Email: 'third@hackclub.com' } }
+		]
+	}));
+
+	assert.equal(count, 4);
+	assert.equal(events.length, 3);
+	assert.equal(JSON.stringify({ count, events }).includes('@'), false);
+	assert.equal(events[0]?.name, 'Ada Lovelace');
+	assert.equal(events[1]?.name, 'Grace H');
+	assert.equal(events[2]?.name, undefined);
+	assert.equal(signupName({ Name: '  ' }), undefined);
+
+	const report = summarizeSignups(count, events, now);
+	const span = daysSinceFirstSignup('2026-11-17T15:00:00.000Z', now);
+	assert.equal(report.line, formatSignupStats(4, span));
+	assert.deepEqual(
+		report.daysSeries.map((day) => [day.date, day.count, day.cumulative]),
+		[
+			['2026-11-17', 2, 2],
+			['2026-11-18', 1, 3],
+			['2026-11-19', 0, 3]
+		]
+	);
+	assert.equal(report.hours[10].count, 1);
+	assert.equal(report.hours[11].count, 1);
+	assert.equal(report.hours[23].count, 1);
+	assert.equal(
+		report.hours.reduce((sum, hour) => sum + hour.count, 0),
+		3
+	);
+	assert.deepEqual(
+		report.recent.map((row) => row.when),
+		['Nov 18, 11:30 PM', 'Nov 17, 11:30 AM', 'Nov 17, 10:00 AM']
+	);
+	assert.equal(report.recent[0]?.name, 'Ada Lovelace');
+	assert.equal(report.hasNames, true);
+	assert.equal(JSON.stringify(report).includes('@'), false);
+});
+
+test('daily series stays continuous across the daylight saving change', () => {
+	const report = summarizeSignups(
+		2,
+		[
+			{ at: '2026-03-07T17:00:00.000Z' },
+			{ at: '2026-03-09T17:00:00.000Z' },
+			{ at: '2026-11-01T04:30:00.000Z' }
+		],
+		new Date('2026-11-01T16:00:00.000Z')
+	);
+	const dates = report.daysSeries.map((day) => day.date);
+	assert.equal(dates[0], '2026-03-07');
+	assert.ok(dates.includes('2026-03-08'));
+	assert.ok(dates.includes('2026-11-01'));
+	assert.equal(dates.at(-1), '2026-11-01');
+	for (let i = 1; i < report.daysSeries.length; i++) {
+		assert.ok(report.daysSeries[i].cumulative >= report.daysSeries[i - 1].cumulative);
+	}
+	assert.equal(report.daysSeries.at(-1)?.cumulative, 3);
+});
+
+test('latest list keeps the 20 newest timestamps', () => {
+	const events = Array.from({ length: 25 }, (_, index) => ({
+		at: new Date(Date.UTC(2026, 10, 1, index)).toISOString()
+	}));
+	const report = summarizeSignups(25, events, new Date('2026-11-02T12:00:00.000Z'));
+	assert.equal(report.recent.length, 20);
+	assert.equal(report.recent[0]?.at, events[24]?.at);
+	assert.equal(report.recent.at(-1)?.at, events[5]?.at);
+	assert.equal(report.hasNames, false);
+});
+
+test('another email stays on the normal rsvp path', () => {
+	assert.equal(isAdminEntryEmail('ada@hackclub.com'), false);
+	assert.equal(isAdminEntryEmail('notjohnny@hackclub.com'), false);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.co'), false);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com.evil.com'), false);
+	assert.equal(isAdminEntryEmail('johnny+stats@hackclub.com'), false);
+});
+
+test('johnny email routes to admin auth', () => {
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com'), true);
+	assert.equal(isAdminEntryEmail('  Johnny@HackClub.com '), true);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com\n'), true);
+});
+
+test('non-allowlisted auth callback is denied', () => {
+	assert.deepEqual([...adminAllowlist(undefined)], ['johnny@hackclub.com']);
+	assert.equal(adminCallbackDecision('ada@hackclub.com', undefined), 'deny');
+	assert.equal(adminCallbackDecision('ada@hackclub.com', 'johnny@hackclub.com'), 'deny');
+	assert.equal(adminCallbackDecision('johnny@hackclub.com', undefined), 'allow');
+	assert.equal(adminCallbackDecision('  Johnny@HackClub.com ', 'johnny@hackclub.com'), 'allow');
 });
 
 test('sealed payload that is not an object is ignored', async () => {

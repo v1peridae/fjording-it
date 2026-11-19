@@ -14,8 +14,8 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	if (admin === 'in') {
 		clearFlash(cookies, url);
 		try {
-			const stats = await getSignupStats();
-			return { view: 'stats' as const, line: stats.line };
+			const report = await getSignupStats();
+			return { view: 'stats' as const, report };
 		} catch (err) {
 			console.error('signup stats failed:', err instanceof Error ? err.message : 'error');
 			return { view: 'error' as const };

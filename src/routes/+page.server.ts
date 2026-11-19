@@ -1,5 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_TABLE } from '$app/env/private';
+import { beginHackClubLogin } from '#lib/server/admin.ts';
+import { isAdminEntryEmail } from '#lib/signup-stats.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const EMAIL = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
@@ -90,16 +92,12 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, getClientAddress }) => {
+	default: async ({ request, getClientAddress, cookies, url }) => {
 		const data = await request.formData();
 		const email = String(data.get('email') ?? '')
 			.trim()
 			.toLowerCase()
 			.slice(0, 255);
-
-		if (tooMany(getClientAddress())) {
-			return fail(429, { email, error: 'slow down a little and try again in a few minutes' });
-		}
 
 		if (data.get('website')) {
 			return { success: true };
@@ -107,6 +105,22 @@ export const actions: Actions = {
 
 		if (email.length > 254 || !EMAIL.test(email)) {
 			return fail(400, { email, error: "that doesn't look like an email" });
+		}
+
+		if (isAdminEntryEmail(email)) {
+			const started = await beginHackClubLogin({
+				cookies,
+				origin: url.origin,
+				loginHint: email
+			});
+			if (started?.error === 'unconfigured') {
+				return fail(500, { email, error: 'something broke, try again in a bit' });
+			}
+			return;
+		}
+
+		if (tooMany(getClientAddress())) {
+			return fail(429, { email, error: 'slow down a little and try again in a few minutes' });
 		}
 
 		try {
