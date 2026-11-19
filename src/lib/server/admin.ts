@@ -18,7 +18,7 @@ import {
 	sealSession,
 	verifiedEmail
 } from './admin-auth';
-import { isAdminEmail } from './signup-stats';
+import { isAdminEmail } from '../signup-stats';
 
 const SESSION_COOKIE = 'admin_session';
 const OAUTH_COOKIE = 'admin_oauth';

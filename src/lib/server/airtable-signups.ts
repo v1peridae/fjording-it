@@ -1,28 +1,17 @@
 import { AIRTABLE_BASE_ID, AIRTABLE_TABLE, AIRTABLE_TOKEN } from '$app/env/private';
-import {
-	daysSinceFirstSignup,
-	formatSignupStats,
-	tallySignups,
-	type AirtablePage
-} from './signup-stats';
+import { readSignups, summarizeSignups, type AirtablePage, type SignupReport } from '../signup-stats';
 
-export type SignupStats = {
-	count: number;
-	days: number | null;
-	line: string;
-};
-
-let cache: { at: number; stats: SignupStats } | null = null;
-let pending: Promise<SignupStats> | null = null;
+let cache: { at: number; report: SignupReport } | null = null;
+let pending: Promise<SignupReport> | null = null;
 const TTL = 60_000;
 
-export function getSignupStats(): Promise<SignupStats> {
-	if (cache && Date.now() - cache.at < TTL) return Promise.resolve(cache.stats);
+export function getSignupStats(): Promise<SignupReport> {
+	if (cache && Date.now() - cache.at < TTL) return Promise.resolve(cache.report);
 
 	pending ??= loadSignupStats()
-		.then((stats) => {
-			cache = { at: Date.now(), stats };
-			return stats;
+		.then((report) => {
+			cache = { at: Date.now(), report };
+			return report;
 		})
 		.finally(() => {
 			pending = null;
@@ -31,16 +20,14 @@ export function getSignupStats(): Promise<SignupStats> {
 	return pending;
 }
 
-async function loadSignupStats(): Promise<SignupStats> {
-	const tally = await tallySignups(fetchPage);
-	const days = tally.firstCreatedAt ? daysSinceFirstSignup(tally.firstCreatedAt) : null;
-	return { count: tally.count, days, line: formatSignupStats(tally.count, days) };
+async function loadSignupStats(): Promise<SignupReport> {
+	const { count, events } = await readSignups(fetchPage);
+	return summarizeSignups(count, events);
 }
 
 async function fetchPage(offset: string): Promise<AirtablePage> {
 	const params = new URLSearchParams({
 		pageSize: '100',
-		'fields[]': 'Email',
 		filterByFormula: '{Email} != ""'
 	});
 	if (offset) params.set('offset', offset);
@@ -65,12 +52,13 @@ async function fetchPage(offset: string): Promise<AirtablePage> {
 					if (!record || typeof record !== 'object') return [];
 					const createdTime = (record as { createdTime?: unknown }).createdTime;
 					const fields = (record as { fields?: unknown }).fields;
-					const email =
-						fields && typeof fields === 'object' ? (fields as { Email?: unknown }).Email : undefined;
 					return [
 						{
 							createdTime: typeof createdTime === 'string' ? createdTime : undefined,
-							fields: { Email: email }
+							fields:
+								fields && typeof fields === 'object' && !Array.isArray(fields)
+									? (fields as Record<string, unknown>)
+									: undefined
 						}
 					];
 				}),
