@@ -17,7 +17,9 @@ import {
 	adminAllowlist,
 	daysSinceFirstSignup,
 	formatSignupStats,
+	adminCallbackDecision,
 	isAdminEmail,
+	isAdminEntryEmail,
 	readSignups,
 	signupName,
 	summarizeSignups,
@@ -338,6 +340,28 @@ test('latest list keeps the 20 newest timestamps', () => {
 	assert.equal(report.recent[0]?.at, events[24]?.at);
 	assert.equal(report.recent.at(-1)?.at, events[5]?.at);
 	assert.equal(report.hasNames, false);
+});
+
+test('another email stays on the normal rsvp path', () => {
+	assert.equal(isAdminEntryEmail('ada@hackclub.com'), false);
+	assert.equal(isAdminEntryEmail('notjohnny@hackclub.com'), false);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.co'), false);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com.evil.com'), false);
+	assert.equal(isAdminEntryEmail('johnny+stats@hackclub.com'), false);
+});
+
+test('johnny email routes to admin auth', () => {
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com'), true);
+	assert.equal(isAdminEntryEmail('  Johnny@HackClub.com '), true);
+	assert.equal(isAdminEntryEmail('johnny@hackclub.com\n'), true);
+});
+
+test('non-allowlisted auth callback is denied', () => {
+	assert.deepEqual([...adminAllowlist(undefined)], ['johnny@hackclub.com']);
+	assert.equal(adminCallbackDecision('ada@hackclub.com', undefined), 'deny');
+	assert.equal(adminCallbackDecision('ada@hackclub.com', 'johnny@hackclub.com'), 'deny');
+	assert.equal(adminCallbackDecision('johnny@hackclub.com', undefined), 'allow');
+	assert.equal(adminCallbackDecision('  Johnny@HackClub.com ', 'johnny@hackclub.com'), 'allow');
 });
 
 test('sealed payload that is not an object is ignored', async () => {
