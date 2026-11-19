@@ -164,6 +164,7 @@ export function summarizeSignups(count: number, events: SignupEvent[], now = new
 }
 
 export const DEFAULT_ADMIN_EMAILS = 'johnny@hackclub.com';
+export const ADMIN_ENTRY_EMAIL = 'johnny@hackclub.com';
 
 export function adminAllowlist(value: string | undefined): Set<string> {
 	const raw = value && value.trim() ? value : DEFAULT_ADMIN_EMAILS;
@@ -177,6 +178,18 @@ export function adminAllowlist(value: string | undefined): Set<string> {
 
 export function isAdminEmail(email: string, allowlist: string | undefined): boolean {
 	return adminAllowlist(allowlist).has(email.trim().toLowerCase());
+}
+
+/** The public RSVP box starts admin sign-in only for this exact address. */
+export function isAdminEntryEmail(email: string): boolean {
+	return email.trim().toLowerCase() === ADMIN_ENTRY_EMAIL;
+}
+
+export function adminCallbackDecision(
+	verifiedEmail: string,
+	allowlist: string | undefined
+): 'allow' | 'deny' {
+	return isAdminEmail(verifiedEmail, allowlist) ? 'allow' : 'deny';
 }
 
 function cleanName(value: unknown): string | undefined {

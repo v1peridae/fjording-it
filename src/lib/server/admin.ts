@@ -18,7 +18,7 @@ import {
 	sealSession,
 	verifiedEmail
 } from './admin-auth';
-import { isAdminEmail } from '../signup-stats';
+import { adminCallbackDecision } from '../signup-stats';
 
 const SESSION_COOKIE = 'admin_session';
 const OAUTH_COOKIE = 'admin_oauth';
@@ -63,7 +63,7 @@ export async function currentAdmin(cookies: Cookies, url: URL): Promise<'in' | '
 		cookies.delete(SESSION_COOKIE, cookieOptions(url));
 		return 'out';
 	}
-	if (!isAdminEmail(email, ADMIN_EMAILS)) {
+	if (adminCallbackDecision(email, ADMIN_EMAILS) === 'deny') {
 		cookies.delete(SESSION_COOKIE, cookieOptions(url));
 		return 'denied';
 	}
@@ -147,7 +147,7 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 			clientSecret: config.clientSecret
 		});
 
-		if (!isAdminEmail(email, ADMIN_EMAILS)) {
+		if (adminCallbackDecision(email, ADMIN_EMAILS) === 'deny') {
 			options.cookies.delete(SESSION_COOKIE, cookieOptions(options.url));
 			console.error(`admin sign-in denied for ${email}`);
 			setFlash(options.cookies, options.url, 'denied');

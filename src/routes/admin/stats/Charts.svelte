@@ -107,26 +107,23 @@
 	);
 </script>
 
-<section class="rounded-2xl border border-black/10 bg-white p-4 shadow-[0_1px_2px_rgba(23,23,29,0.04)] md:p-6">
-	<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+<section class="mt-8">
+	<div class="mb-3 flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h2 class="text-lg font-bold">Over time</h2>
-			<p class="mt-1 text-sm text-hc-muted">Each day, and the running total. Eastern time.</p>
+			<h2 class="text-[22px]">over time</h2>
+			<p class="mt-1 text-[15px]">each day, and the running total. eastern time.</p>
 		</div>
-		<div class="flex gap-4 text-sm text-hc-muted">
-			<span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-hc"></span> that day</span>
-			<span class="inline-flex items-center gap-2"
-				><span class="h-0.5 w-4 bg-hc-blue"></span> running total</span
-			>
+		<div class="flex gap-4 text-[15px]">
+			<span class="inline-flex items-center gap-2"><span class="h-3 w-3 bg-ink"></span> that day</span>
+			<span class="inline-flex items-center gap-2"><span class="h-0.5 w-4 bg-rust"></span> running total</span>
 		</div>
 	</div>
 	<div class="overflow-x-auto">
 		<svg
-			class="block h-auto max-w-none"
+			class="block h-auto max-w-none font-pirate"
 			width={daily.width}
 			height={daily.height}
 			viewBox={`0 0 ${daily.width} ${daily.height}`}
-			font-family="Phantom Sans, ui-sans-serif, system-ui, sans-serif"
 			role="img"
 			aria-label={`Daily sign-ups and running total in Eastern time. Busiest day ${busiest.label} with ${busiest.count}.`}
 		>
@@ -136,14 +133,14 @@
 					x2={daily.width - 46}
 					y1={y(daily.maxDay, tick, daily.padT, daily.innerH)}
 					y2={y(daily.maxDay, tick, daily.padT, daily.innerH)}
-					stroke="#e6e8ec"
+					class="stroke-ink/25"
 				/>
 				<text
 					x={daily.padL - 8}
 					y={y(daily.maxDay, tick, daily.padT, daily.innerH) + 4}
 					text-anchor="end"
-					fill="#5c6570"
-					font-size="11">{tick}</text
+					class="fill-ink"
+					font-size="13">{tick}</text
 				>
 			{/each}
 			{#each daily.rightTicks as tick (tick)}
@@ -151,19 +148,19 @@
 					x={daily.width - 8}
 					y={y(daily.maxTotal, tick, daily.padT, daily.innerH) + 4}
 					text-anchor="end"
-					fill="#338eda"
-					font-size="11">{tick}</text
+					class="fill-rust"
+					font-size="13">{tick}</text
 				>
 			{/each}
 			{#each daily.bars as bar (bar.date)}
-				<rect x={bar.x} y={bar.y} width={bar.barW} height={bar.barH} rx="3" fill="#ec3750">
+				<rect x={bar.x} y={bar.y} width={bar.barW} height={bar.barH} class="fill-ink">
 					<title>{bar.label}: {bar.count}</title>
 				</rect>
 			{/each}
-			<path d={daily.line} fill="none" stroke="#338eda" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+			<path d={daily.line} class="fill-none stroke-rust" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
 			{#if daily.points.length <= 21}
 				{#each daily.points as point, index (`${days[index].date}-pt`)}
-					<circle cx={point.x} cy={point.y} r="3.5" fill="#338eda">
+					<circle cx={point.x} cy={point.y} r="3.5" class="fill-rust">
 						<title>{days[index].label}: {days[index].cumulative} total</title>
 					</circle>
 				{/each}
@@ -171,11 +168,11 @@
 			{#each daily.dayTicks as index (days[index].date)}
 				<text
 					x={daily.bars[index].cx}
-					y={daily.rotate ? daily.base + 14 : daily.base + 18}
+					y={daily.rotate ? daily.base + 16 : daily.base + 20}
 					text-anchor={daily.rotate ? 'end' : 'middle'}
-					fill="#5c6570"
-					font-size="11"
-					transform={daily.rotate ? `rotate(-40 ${daily.bars[index].cx} ${daily.base + 14})` : undefined}
+					class="fill-ink"
+					font-size="13"
+					transform={daily.rotate ? `rotate(-40 ${daily.bars[index].cx} ${daily.base + 16})` : undefined}
 					>{days[index].label}</text
 				>
 			{/each}
@@ -183,16 +180,15 @@
 	</div>
 </section>
 
-<section class="rounded-2xl border border-black/10 bg-white p-4 shadow-[0_1px_2px_rgba(23,23,29,0.04)] md:p-6">
-	<h2 class="text-lg font-bold">By hour of day</h2>
-	<p class="mt-1 text-sm text-hc-muted">When people sign up, Eastern time. Busiest hour is {busiestHour.label}.</p>
+<section class="mt-8">
+	<h2 class="text-[22px]">by hour of day</h2>
+	<p class="mt-1 text-[15px]">when people sign up, eastern time. busiest hour is {busiestHour.label}.</p>
 	<div class="mt-4 overflow-x-auto">
 		<svg
-			class="block h-auto max-w-none"
+			class="block h-auto max-w-none font-pirate"
 			width={hourly.width}
 			height={hourly.height}
 			viewBox={`0 0 ${hourly.width} ${hourly.height}`}
-			font-family="Phantom Sans, ui-sans-serif, system-ui, sans-serif"
 			role="img"
 			aria-label={`Sign-ups by hour of day in Eastern time. Busiest hour ${busiestHour.label} with ${busiestHour.count}.`}
 		>
@@ -202,23 +198,27 @@
 					x2={hourly.width - 12}
 					y1={y(hourly.max, tick, hourly.padT, hourly.innerH)}
 					y2={y(hourly.max, tick, hourly.padT, hourly.innerH)}
-					stroke="#e6e8ec"
+					class="stroke-ink/25"
 				/>
 				<text
 					x={hourly.padL - 6}
 					y={y(hourly.max, tick, hourly.padT, hourly.innerH) + 4}
 					text-anchor="end"
-					fill="#5c6570"
-					font-size="11">{tick}</text
+					class="fill-ink"
+					font-size="13">{tick}</text
 				>
 			{/each}
 			{#each hourly.bars as bar (bar.hour)}
-				<rect x={bar.x} y={bar.y} width={bar.barW} height={bar.barH} rx="2" fill="#ec3750">
+				<rect x={bar.x} y={bar.y} width={bar.barW} height={bar.barH} class="fill-ink">
 					<title>{bar.label}: {bar.count}</title>
 				</rect>
 				{#if bar.hour % 3 === 0}
-					<text x={bar.x + bar.barW / 2} y={hourly.base + 18} text-anchor="middle" fill="#5c6570" font-size="11"
-						>{bar.label}</text
+					<text
+						x={bar.x + bar.barW / 2}
+						y={hourly.base + 20}
+						text-anchor="middle"
+						class="fill-ink"
+						font-size="13">{bar.label}</text
 					>
 				{/if}
 			{/each}

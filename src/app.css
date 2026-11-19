@@ -11,13 +11,6 @@
 	--font-pirate-3d: 'Noailles Pirate 3D', serif;
 	--font-times: 'Noailles Times', serif;
 	--font-literatura: 'Literatura Past', serif;
-	--font-phantom: 'Phantom Sans', ui-sans-serif, system-ui, sans-serif;
-
-	--color-hc: #ec3750;
-	--color-hc-ink: #17171d;
-	--color-hc-blue: #338eda;
-	--color-hc-snow: #f6f7f9;
-	--color-hc-muted: #5c6570;
 }
 
 @utility paper {
@@ -52,21 +45,5 @@
 @font-face {
 	font-family: 'Noailles Times';
 	src: url('/fonts/Hershey-Noailles-Times-Duplex-Italic-Bold.otf') format('opentype');
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'Phantom Sans';
-	src: url('https://assets.hackclub.com/fonts/Phantom_Sans_0.7/Regular.woff2') format('woff2');
-	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'Phantom Sans';
-	src: url('https://assets.hackclub.com/fonts/Phantom_Sans_0.7/Bold.woff2') format('woff2');
-	font-weight: 700;
-	font-style: normal;
 	font-display: swap;
 }
