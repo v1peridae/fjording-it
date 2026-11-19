@@ -286,6 +286,8 @@ test('charts use eastern time, keep the utc headline, and drop emails', async ()
 	const report = summarizeSignups(count, events, now);
 	const span = daysSinceFirstSignup('2026-11-17T15:00:00.000Z', now);
 	assert.equal(report.line, formatSignupStats(4, span));
+	assert.equal(report.today, 0);
+	assert.equal(report.perDay, '1.3');
 	assert.deepEqual(
 		report.daysSeries.map((day) => [day.date, day.count, day.cumulative]),
 		[

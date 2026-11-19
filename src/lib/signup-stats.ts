@@ -41,6 +41,8 @@ export type SignupReport = {
 	count: number;
 	days: number | null;
 	line: string;
+	today: number;
+	perDay: string;
 	daysSeries: DayBar[];
 	hours: HourBar[];
 	recent: RecentSignup[];
@@ -156,11 +158,19 @@ export function summarizeSignups(count: number, events: SignupEvent[], now = new
 		count,
 		days,
 		line: formatSignupStats(count, days),
+		today: byDay.get(today) ?? 0,
+		perDay: formatPerDay(count, days),
 		daysSeries,
 		hours,
 		recent,
 		hasNames: recent.some((row) => row.name)
 	};
+}
+
+function formatPerDay(count: number, days: number | null): string {
+	if (!days) return '0';
+	const value = count / days;
+	return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 export const DEFAULT_ADMIN_EMAILS = 'johnny@hackclub.com';
