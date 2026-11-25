@@ -135,7 +135,7 @@
 							{:else}
 								<em class="ok">hackatime connected ✓</em>
 							{/if}
-							<em class="min">5h minimum</em>
+							{#if !data.relaxHours}<em class="min">5h minimum</em>{/if}
 						</p>
 						<div class="pick" role="listbox" aria-labelledby="hk-l">
 							<div class="cur">

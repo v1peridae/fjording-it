@@ -54,3 +54,7 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+## Northern Challenge
+
+`PRESUBMIT_TESTER_EMAILS` is a comma-separated, case-insensitive list of participant emails. A signed-in person on that list can submit before Fri Nov 27 00:00 America/New_York and can ship a Hackatime project under 5 hours. Leave it empty and nobody gets that exception. Everyone else stays locked until kickoff, and name, links, screenshot, and duplicate-project checks still apply to testers. See `.env.example`.

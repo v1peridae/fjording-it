@@ -13,6 +13,7 @@ import {
 } from '../src/lib/review-checks.ts';
 import { applyDecision, approvedHours, lapseLinks, median } from '../src/lib/review-pipeline.ts';
 import { hackathonKickoff } from '../src/lib/hackathon.ts';
+import { canSubmit, hoursEligible, presubmitTester, submitPhase } from '../src/lib/northern.ts';
 
 test('the pipeline walks first pass, fraud, then hq, and send-back steps backward', () => {
 	assert.deepEqual(applyDecision('first_pass', 'approved'), { stage: 'fraud', status: 'pending' });
@@ -160,4 +161,21 @@ test('participant sign-in omits address and birthday and treats them as unknown'
 	assert.equal(ageCheck(messy.birthday), 'unknown');
 	assert.equal(addressCheck(messy.address), 'unknown');
 	assert.equal(identityFromMe(null, bare!), bare);
+});
+
+test('presubmit testers can submit before kickoff; a normal participant cannot', () => {
+	const before = new Date('2026-11-26T12:00:00.000Z');
+	const list = 'johnathanmcphilbin2@gmail.com, other@hackclub.com';
+	assert.equal(submitPhase(before), 'early');
+	assert.equal(hackathonKickoff().toISOString(), '2026-11-27T05:00:00.000Z');
+	assert.equal(canSubmit('early', presubmitTester('JohnathanMcphilbin2@gmail.com', list)), true);
+	assert.equal(canSubmit('early', presubmitTester('someone@hackclub.com', list)), false);
+	assert.equal(canSubmit('early', presubmitTester('someone@hackclub.com', '')), false);
+	assert.equal(canSubmit('early', presubmitTester('someone@hackclub.com', undefined)), false);
+	assert.equal(canSubmit('early', false), false);
+	assert.equal(canSubmit('closed', presubmitTester('johnathanmcphilbin2@gmail.com', list)), false);
+	assert.equal(canSubmit('open', false), true);
+	assert.equal(hoursEligible(60, true), true);
+	assert.equal(hoursEligible(60, false), false);
+	assert.equal(hoursEligible(5 * 60 * 60, false), true);
 });

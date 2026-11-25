@@ -21,7 +21,7 @@ import {
 } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import { sniffImage } from '#lib/northern.ts';
-import { canSubmit, cleanDescription, cleanProjectName, eligibleHours, httpUrl, submitPhase } from '#lib/northern.ts';
+import { canSubmit, cleanDescription, cleanProjectName, hoursEligible, httpUrl, presubmitTester, submitPhase } from '#lib/northern.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -45,7 +45,8 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
 	}));
 	const phase = submitPhase(new Date());
-	const allowed = canSubmit(phase, access.admin);
+	const tester = presubmitTester(participant?.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));
+	const allowed = canSubmit(phase, access.admin || tester);
 	const notice = signinNotice(url.searchParams.get('signin')) ?? hackatimeNotice(url.searchParams.get('hackatime'), configured);
 
 	let github: string | null = null;
@@ -55,7 +56,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 
 	if (participant && configured && databaseConfigured()) {
 		try {
-			const live = await liveProjects(participant.email);
+			const live = await liveProjects(participant.email, tester);
 			github = live.github;
 			linked = live.linked;
 			projects = live.projects;
@@ -81,6 +82,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 			: null,
 		phase,
 		allowed,
+		relaxHours: tester,
 		preview: phase === 'early',
 		configured,
 		connected: linked && !projectsFailed,
@@ -104,7 +106,7 @@ function hackatimeNotice(flag: string | null, configured: boolean): string | nul
 	return null;
 }
 
-async function liveProjects(email: string): Promise<{
+async function liveProjects(email: string, bypassHours = false): Promise<{
 	github: string | null;
 	linked: boolean;
 	projects: { name: string; seconds: number; hours: string; eligible: boolean }[];
@@ -150,7 +152,7 @@ async function liveProjects(email: string): Promise<{
 			name: project.name,
 			seconds: project.totalSeconds,
 			hours: formatHours(project.totalSeconds),
-			eligible: eligibleHours(project.totalSeconds)
+			eligible: hoursEligible(project.totalSeconds, bypassHours)
 		}))
 	};
 }
@@ -170,7 +172,8 @@ export const actions: Actions = {
 		if (!participant) return fail(401, { ...values, error: 'sign in with hack club first' });
 
 		const phase = submitPhase(new Date());
-		if (!canSubmit(phase, access.admin)) {
+		const tester = presubmitTester(participant.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));
+		if (!canSubmit(phase, access.admin || tester)) {
 			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : 'opens nov 27' });
 		}
 
@@ -188,7 +191,7 @@ export const actions: Actions = {
 	});
 		if (!client) return fail(400, { ...values, error: 'Hackatime not connected yet' });
 
-		const live = await liveProjects(participant.email);
+		const live = await liveProjects(participant.email, tester);
 		if (!live.linked || live.failed) return fail(400, { ...values, error: 'connect hackatime, then pick a project' });
 		const match = live.projects.find((item) => item.name === picked);
 		if (!match) return fail(400, { ...values, error: 'pick one of your hackatime projects' });
