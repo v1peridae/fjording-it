@@ -38,6 +38,9 @@
 				<img class="string" src="/hackathon/tag-string.svg" alt="" />
 				<span class="tag"><span class="t">{role === 'owner' ? 'admin' : 'reviewer'}</span><b>{who}</b></span>
 			</span>
+			<form method="POST" action="/admin?/signout">
+				<button type="submit">sign out</button>
+			</form>
 		{/if}
 	</div>
 </nav>
@@ -149,6 +152,21 @@
 	b {
 		font-weight: 400;
 		font-size: 18px;
+	}
+	form {
+		margin: 0;
+	}
+	button {
+		font: inherit;
+		color: inherit;
+		background: transparent;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		padding: 4px 2px;
+		cursor: pointer;
+	}
+	button:hover {
+		border-bottom-color: #2fb3a0;
 	}
 	@media (max-width: 760px) {
 		.mini {

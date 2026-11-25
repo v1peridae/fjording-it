@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { beginHackClubLogin, clearFlash, currentAdminView } from '#lib/server/admin.ts';
+import { beginHackClubLogin, clearFlash, currentAdminView, enforceOwner } from '#lib/server/admin.ts';
 import { getSignupStats } from '#lib/server/airtable-signups.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 
 	const admin = await currentAdminView(cookies, url);
+	enforceOwner(admin.status, url);
 	if (admin.status !== 'in') error(404, 'Not Found');
 	clearFlash(cookies, url);
 	try {

@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
-import { currentAdminView } from '#lib/server/admin.ts';
+import { currentAdminView, enforceOwner } from '#lib/server/admin.ts';
 import { listReviewerAudit, listReviewers, removeReviewer, reviewerStats, saveReviewer } from '#lib/server/northern-store.ts';
 import { isStage, median, type Stage } from '#lib/review-pipeline.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -10,6 +10,7 @@ export const prerender = false;
 export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 	const admin = await currentAdminView(cookies, url);
+	enforceOwner(admin.status, url);
 	if (admin.status !== 'in') error(404, 'Not Found');
 	const who = { email: admin.email, handle: admin.handle };
 	if (!databaseConfigured()) return { view: 'unconfigured' as const, ...who, reviewers: [], audit: [], stats: [] };
@@ -60,6 +61,7 @@ function dateParam(value: string | null): Date | null {
 export const actions: Actions = {
 	save: async ({ request, cookies, url }) => {
 		const admin = await currentAdminView(cookies, url);
+		enforceOwner(admin.status, url);
 		if (admin.status !== 'in') error(404, 'Not Found');
 		const data = await request.formData();
 		const email = String(data.get('email') ?? '').trim().toLowerCase();
@@ -71,6 +73,7 @@ export const actions: Actions = {
 	},
 	remove: async ({ request, cookies, url }) => {
 		const admin = await currentAdminView(cookies, url);
+		enforceOwner(admin.status, url);
 		if (admin.status !== 'in') error(404, 'Not Found');
 		const email = String((await request.formData()).get('email') ?? '').trim().toLowerCase();
 		if (!email) return fail(400, { error: 'missing email' });

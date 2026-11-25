@@ -34,7 +34,11 @@
 </svelte:head>
 
 <div class="hackathon">
-	<div class="wrap" style="padding-top: 8px"><AdminNav route="/hackathon" email={data.email ?? ''} handle={data.handle} /></div>
+	{#if data.nav.staff}
+		<div class="wrap" style="padding-top: 8px">
+			<AdminNav role={data.nav.staff} route="/hackathon" email={data.email ?? ''} handle={data.handle} />
+		</div>
+	{/if}
 	<picture class="bg">
 		<source media="(max-width: 760px)" srcset="/hackathon/lauklines-3600.jpg" />
 		<img
@@ -54,14 +58,16 @@
 				<a class="mini" href="/">fjording it</a>
 				<div class="right">
 					<ul>
-						<li class="opt"><a href="#prizes">prizes</a></li>
-						<li class="opt"><a href="#rules">rules</a></li>
-						<li><a href="/hackathon/submit">submit</a></li>
+						{#each data.nav.public as link (link.href)}
+							<li class:opt={link.label === 'prizes' || link.label === 'rules'}>
+								<a href={link.href}>{link.label}</a>
+							</li>
+						{/each}
 					</ul>
-					{#if data.handle}
+					{#if data.participantLabel}
 						<span class="tagwrap">
 							<img class="string" src="/hackathon/tag-string.svg" alt="" />
-							<span class="tag"><span class="t">signed in as</span><b>{data.handle}</b></span>
+							<span class="tag"><span class="t">signed in as</span><b>{data.participantLabel}</b></span>
 						</span>
 					{/if}
 				</div>

@@ -18,7 +18,7 @@ import {
 	SESSION_MS,
 	verifyIdToken
 } from './admin-auth.ts';
-import { currentAdminView } from './admin.ts';
+import { currentAdminView, enforceOwner } from './admin.ts';
 import { appDatabase } from './app-db.ts';
 import { participantByHackClubId, upsertParticipant, type ParticipantRow } from './northern-store.ts';
 import { northernIsPublic } from '../northern-access.ts';
@@ -71,11 +71,11 @@ export async function currentParticipant(cookies: Cookies, url: URL): Promise<Pa
 	}
 }
 
-export async function northernPageAllowed(cookies: Cookies, url: URL): Promise<{ admin: boolean }> {
-	const admin = await currentAdminView(cookies, url);
-	const allowed = northernIsPublic(privateEnv('NORTHERN_PUBLIC')) || admin.status === 'in';
-	if (!allowed) error(404, 'Not Found');
-	return { admin: admin.status === 'in' };
+export async function northernPageAllowed(cookies: Cookies, url: URL) {
+	const view = await currentAdminView(cookies, url);
+	if (northernIsPublic(privateEnv('NORTHERN_PUBLIC'))) return { admin: view.status === 'in', view };
+	enforceOwner(view.status, url);
+	return { admin: true, view };
 }
 
 export async function beginParticipantLogin(options: { cookies: Cookies; url: URL }): Promise<void> {

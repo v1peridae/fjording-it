@@ -1,5 +1,5 @@
-import { currentAdminView } from '#lib/server/admin.ts';
-import { northernPageAllowed } from '#lib/server/participant.ts';
+import { hackathonNav } from '#lib/hackathon-nav.ts';
+import { currentParticipant, northernPageAllowed } from '#lib/server/participant.ts';
 import type { PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -10,12 +10,15 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		'x-robots-tag': 'noindex, nofollow'
 	});
 
-	await northernPageAllowed(cookies, url);
-	const admin = await currentAdminView(cookies, url);
+	const admin = (await northernPageAllowed(cookies, url)).view;
+	const participant = await currentParticipant(cookies, url);
+	const staff = admin.status === 'in' || admin.status === 'reviewer';
 
 	return {
-		handle: admin.status === 'in' ? admin.handle : null,
-		email: admin.status === 'in' ? admin.email : null,
+		nav: hackathonNav(admin.status, Boolean(participant)),
+		handle: staff ? admin.handle : null,
+		email: staff ? admin.email : null,
+		participantLabel: participant?.name || participant?.email || null,
 		now: Date.now()
 	};
 };

@@ -86,6 +86,7 @@
 					<div class="strip torn">
 						<span class="kicker">fjording it · /reviews</span>
 						<h1>review queue</h1>
+						{#if data.loadError}<p class="load-error">{data.loadError}</p>{/if}
 					</div>
 				</div>
 				<div class="band-meta torn">

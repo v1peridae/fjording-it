@@ -1,10 +1,11 @@
 import { privateEnv } from '#lib/server/private-env.ts';
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
+import { safeNext } from '#lib/admin-gate.ts';
 import { medianHoursLabel } from '#lib/admin-charts.ts';
 import { median } from '#lib/review-pipeline.ts';
 import { isAdminEmail } from '#lib/signup-stats.ts';
 import { getSignupStats } from '#lib/server/airtable-signups.ts';
-import { beginHackClubLogin, currentAdminView, takeFlash } from '#lib/server/admin.ts';
+import { beginHackClubLogin, currentAdminView, signOutAdmin, takeFlash } from '#lib/server/admin.ts';
 import { appDatabase, databaseConfigured } from '#lib/server/app-db.ts';
 import { listReviewers, loadAdminHome, reviewerStats } from '#lib/server/northern-store.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -16,11 +17,17 @@ const EMAIL = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 	const admin = await currentAdminView(cookies, url);
-	if (admin.status === 'reviewer') error(404, 'Not Found');
+	const next = safeNext(url.searchParams.get('next'));
+	if (admin.status === 'in' && next) redirect(303, next);
+	if (admin.status === 'reviewer') {
+		if (next === '/reviews' || next?.startsWith('/reviews/')) redirect(303, next);
+		error(404, 'Not Found');
+	}
 	if (admin.status !== 'in') {
 		const flash = takeFlash(cookies, url);
 		return {
 			view: 'signin' as const,
+			next,
 			error: flash === 'denied' ? 'not authorised' : flash === 'failed' ? "sign-in didn't work, try again" : undefined
 		};
 	}
@@ -102,7 +109,12 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const email = String(data.get('email') ?? '').trim().toLowerCase().slice(0, 255);
 		if (email && (email.length > 254 || !EMAIL.test(email))) return fail(400, { email, error: "that doesn't look like an email" });
-		const started = await beginHackClubLogin({ cookies, origin: url.origin, loginHint: email || undefined });
+		const next = safeNext(String(data.get('next') ?? ''));
+		const started = await beginHackClubLogin({ cookies, origin: url.origin, loginHint: email || undefined, next });
 		if (started?.error === 'unconfigured') return fail(500, { email, error: 'sign-in is not configured' });
+	},
+	signout: async ({ cookies, url }) => {
+		signOutAdmin(cookies, url);
+		redirect(303, '/admin');
 	}
 };
