@@ -1,5 +1,6 @@
 import { privateEnv } from '#lib/server/private-env.ts';
 import { openSealed } from '#lib/server/admin-auth.ts';
+import { currentAdminView } from '#lib/server/admin.ts';
 import { appDatabase } from '#lib/server/app-db.ts';
 import {
 	exchangeCode,
@@ -8,8 +9,9 @@ import {
 	hackatimeCredentials,
 	statesMatch
 } from '#lib/server/hackatime.ts';
+import { northernIsPublic } from '#lib/northern-access.ts';
+import { currentParticipant } from '#lib/server/participant.ts';
 import { saveHackatimeConnection } from '#lib/server/northern-store.ts';
-import { isAdminEmail } from '#lib/signup-stats.ts';
 import type { RequestHandler } from './$types';
 
 export const prerender = false;
@@ -42,6 +44,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
 	const email = typeof sealed?.email === 'string' ? sealed.email : '';
+	const admin = await currentAdminView(cookies, url);
+	const participant = await currentParticipant(cookies, url);
+	if (!northernIsPublic(privateEnv('NORTHERN_PUBLIC')) && admin.status !== 'in') return back('failed');
 	if (
 		!secret ||
 		!client ||
@@ -49,8 +54,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		typeof sealed.state !== 'string' ||
 		typeof sealed.exp !== 'number' ||
 		sealed.exp <= Date.now() ||
+		!participant ||
 		!email ||
-		!isAdminEmail(email, privateEnv('ADMIN_EMAILS')) ||
+		email !== participant.email ||
 		!code ||
 		!state ||
 		!statesMatch(state, sealed.state)

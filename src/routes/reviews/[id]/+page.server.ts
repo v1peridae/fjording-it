@@ -6,7 +6,7 @@ import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView } from '#lib/server/admin.ts';
 import { fetchHackatimeProjects, formatHours } from '#lib/server/hackatime.ts';
-import { getSubmission, latestChecks, latestOutbox, listReviews, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
+import { getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import {
 	airtableEligible,
@@ -56,6 +56,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		handle: admin.handle,
 		githubUsername: connection?.githubUsername ?? null,
 		hackatimeUserId: connection?.hackatimeUserId ?? null,
+		participant: await participantForSubmission(db, id),
 		submission,
 		reviews: await listReviews(db, id),
 		checks: await latestChecks(db, id),

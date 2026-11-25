@@ -34,7 +34,7 @@
 </svelte:head>
 
 <div class="hackathon">
-	<div class="wrap" style="padding-top: 8px"><AdminNav route="/hackathon" email={data.email} handle={data.handle} /></div>
+	<div class="wrap" style="padding-top: 8px"><AdminNav route="/hackathon" email={data.email ?? ''} handle={data.handle} /></div>
 	<picture class="bg">
 		<source media="(max-width: 760px)" srcset="/hackathon/lauklines-3600.jpg" />
 		<img

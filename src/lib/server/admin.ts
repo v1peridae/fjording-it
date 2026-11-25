@@ -20,7 +20,7 @@ const SESSION_COOKIE = 'admin_session';
 const OAUTH_COOKIE = 'admin_oauth';
 const FLASH_COOKIE = 'admin_flash';
 /** Owners and reviewers share one session cookie, scoped to the pages that read it. */
-const SESSION_PATHS = ['/admin', '/hackathon', '/reviews'] as const;
+const SESSION_PATHS = ['/admin', '/hackathon', '/reviews', '/auth'] as const;
 
 type Flash = 'denied' | 'failed';
 

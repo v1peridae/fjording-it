@@ -1,12 +1,19 @@
-import { approvedHours } from './review-pipeline.ts';
-
-/** Exact YSWS Project Submission column names. */
+/** Exact YSWS Project Submission column names on base appvTVotaimtBHIsi. */
 export const AIRTABLE_FIELDS = {
 	email: 'Email',
 	code: 'Code URL',
 	playable: 'Playable URL',
 	description: 'Description',
 	github: 'GitHub Username',
+	firstName: 'First Name',
+	lastName: 'Last Name',
+	birthday: 'Birthday',
+	address1: 'Address (Line 1)',
+	address2: 'Address (Line 2)',
+	city: 'City',
+	state: 'State / Province',
+	country: 'Country',
+	postal: 'ZIP / Postal Code',
 	hackatimeId: 'Justification - Submitter Hackatime ID',
 	hackatimeProjects: 'Justification - Hackatime Project Name(s) + Date Range(s)',
 	lapseLinks: 'Justification - Lapse Links, comma-separated',
@@ -15,6 +22,7 @@ export const AIRTABLE_FIELDS = {
 	alternate: 'Justification - Alternate Tracking Method',
 	additional: 'Justification - Additional Justification',
 	overrideHours: 'Optional - Override Hours Spent',
+	overrideWhy: 'Optional - Override Hours Spent Justification',
 	screenshot: 'Screenshot'
 } as const;
 
@@ -47,6 +55,7 @@ export function airtableRecordFields(input: {
 	hackatimeUserId: string | null;
 	hackatimeProject: string;
 	hackatimeSeconds: number;
+	windowLabel: string | null;
 	lapseLinks: string[];
 	technicalFeatures: string;
 	deflationJustification: string;
@@ -54,22 +63,49 @@ export function airtableRecordFields(input: {
 	additionalJustification: string;
 	note: string;
 	overrideHours: number | null;
+	firstName?: string | null;
+	lastName?: string | null;
+	birthday?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	city?: string | null;
+	state?: string | null;
+	country?: string | null;
+	postalCode?: string | null;
 }): Record<string, string | number> {
-	const fields: Record<string, string | number> = {
-		[AIRTABLE_FIELDS.email]: input.email,
-		[AIRTABLE_FIELDS.code]: input.repoUrl,
-		[AIRTABLE_FIELDS.playable]: input.demoUrl,
-		[AIRTABLE_FIELDS.description]: input.description,
-		[AIRTABLE_FIELDS.hackatimeProjects]: input.hackatimeProject,
-		[AIRTABLE_FIELDS.lapseLinks]: input.lapseLinks.join(', '),
-		[AIRTABLE_FIELDS.technical]: input.technicalFeatures,
-		[AIRTABLE_FIELDS.deflation]: input.deflationJustification,
-		[AIRTABLE_FIELDS.alternate]: input.alternateTracking,
-		[AIRTABLE_FIELDS.additional]: [input.additionalJustification, input.note].filter(Boolean).join('\n\n'),
-		'Approved Hours': approvedHours(input.hackatimeSeconds, input.overrideHours)
+	const fields: Record<string, string | number> = {};
+	const set = (name: string, value: string | number | null | undefined) => {
+		if (value == null || value === '') return;
+		fields[name] = value;
 	};
-	if (input.githubUsername) fields[AIRTABLE_FIELDS.github] = input.githubUsername;
-	if (input.hackatimeUserId) fields[AIRTABLE_FIELDS.hackatimeId] = input.hackatimeUserId;
-	if (input.overrideHours != null) fields[AIRTABLE_FIELDS.overrideHours] = input.overrideHours;
+	const hours = Math.round((input.hackatimeSeconds / 3600) * 10) / 10;
+	set(AIRTABLE_FIELDS.email, input.email);
+	set(AIRTABLE_FIELDS.code, input.repoUrl);
+	set(AIRTABLE_FIELDS.playable, input.demoUrl);
+	set(AIRTABLE_FIELDS.description, input.description);
+	set(AIRTABLE_FIELDS.github, input.githubUsername);
+	set(AIRTABLE_FIELDS.firstName, input.firstName);
+	set(AIRTABLE_FIELDS.lastName, input.lastName);
+	set(AIRTABLE_FIELDS.birthday, input.birthday);
+	set(AIRTABLE_FIELDS.address1, input.addressLine1);
+	set(AIRTABLE_FIELDS.address2, input.addressLine2);
+	set(AIRTABLE_FIELDS.city, input.city);
+	set(AIRTABLE_FIELDS.state, input.state);
+	set(AIRTABLE_FIELDS.country, input.country);
+	set(AIRTABLE_FIELDS.postal, input.postalCode);
+	set(AIRTABLE_FIELDS.hackatimeId, input.hackatimeUserId);
+	set(
+		AIRTABLE_FIELDS.hackatimeProjects,
+		[input.hackatimeProject, `${hours}h`, input.windowLabel].filter(Boolean).join('\n')
+	);
+	set(AIRTABLE_FIELDS.lapseLinks, input.lapseLinks.join(', '));
+	set(AIRTABLE_FIELDS.technical, input.technicalFeatures);
+	set(AIRTABLE_FIELDS.deflation, input.deflationJustification);
+	set(AIRTABLE_FIELDS.alternate, input.alternateTracking);
+	set(AIRTABLE_FIELDS.additional, [input.additionalJustification, input.note].filter(Boolean).join('\n\n'));
+	if (input.overrideHours != null) {
+		set(AIRTABLE_FIELDS.overrideHours, input.overrideHours);
+		set(AIRTABLE_FIELDS.overrideWhy, input.deflationJustification || input.note);
+	}
 	return fields;
 }

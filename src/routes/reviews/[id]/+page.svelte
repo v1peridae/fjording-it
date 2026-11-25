@@ -105,7 +105,20 @@
 							<span class="sub">submitted {formatEt(submission.createdAt)}</span>
 						</div>
 						<div class="kv-grid">
-							<div class="kv"><span class="k">author</span><span class="v"><strong>{submission.email}</strong></span></div>
+							<div class="kv">
+								<span class="k">author</span>
+								<span class="v">
+									<strong>{data.participant?.name ?? submission.email}</strong>
+									{#if data.participant}
+										<br />{data.participant.email}
+										<br />hack club {data.participant.hackClubId}
+										<br />verification {data.participant.verificationStatus ?? 'not on the sign-in'}
+										{#if data.participant.slackId}<br />slack {data.participant.slackId}{/if}
+									{:else}
+										<br />no hack club auth record on this submission
+									{/if}
+								</span>
+							</div>
 							<div class="kv">
 								<span class="k">hackatime project</span>
 								<span class="v"><strong>{submission.hackatimeProject} · {clockHours(submission.hackatimeSeconds)}</strong> <span class={five ? 'chip chip-ok' : 'chip chip-needs-changes'}>{five ? '5h+ ✓' : 'under 5h'}</span></span>
