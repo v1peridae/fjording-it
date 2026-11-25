@@ -54,12 +54,7 @@
 					<ul>
 						<li class="opt"><a href="#prizes">prizes</a></li>
 						<li class="opt"><a href="#rules">rules</a></li>
-						<li>
-							<span class="soon" aria-disabled="true">
-								<span class="word">submit</span>
-								<span class="note">opens nov 27</span>
-							</span>
-						</li>
+						<li><a href="/hackathon/submit">submit</a></li>
 					</ul>
 					{#if data.handle}
 						<span class="tagwrap">

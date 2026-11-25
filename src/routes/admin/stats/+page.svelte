@@ -21,6 +21,9 @@
 			<header class="border-2 border-ink bg-cream px-5 py-6 text-center md:px-8">
 				<h1 class="text-[40px] leading-none text-balance md:text-[52px]">{data.report.line}</h1>
 				<p class="mt-3 text-[18px]">times below are eastern time</p>
+				<p class="mt-3 text-[18px]">
+					<a class="underline decoration-from-font" href="/admin/submissions">northern challenge</a>
+				</p>
 			</header>
 
 			<div class="grid grid-cols-2 gap-3 md:grid-cols-4">

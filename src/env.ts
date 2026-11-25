@@ -23,5 +23,17 @@ export const variables = defineEnvVars({
 	ADMIN_EMAILS: {
 		description: 'Comma-separated admin allowlist. Defaults to johnny@hackclub.com when unset.',
 		schema: optional
+	},
+	HACKATIME_CLIENT_ID: {
+		description: 'Hackatime OAuth client id. Server-side only. Redirect URI must be https://fjording.hackclub.com/auth/hackatime/callback.',
+		schema: optional
+	},
+	HACKATIME_CLIENT_SECRET: {
+		description: 'Hackatime OAuth client secret. Server-side only.',
+		schema: optional
+	},
+	DATABASE_PATH: {
+		description: 'SQLite file for Northern Challenge submissions. Defaults to data/fjording.sqlite.',
+		schema: optional
 	}
 });
