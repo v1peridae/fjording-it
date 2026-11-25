@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { afterLoginPath, safeNext } from '#lib/admin-gate.ts';
 import { finishHackClubLogin } from '#lib/server/admin.ts';
 import type { RequestHandler } from './$types';
 
@@ -10,5 +11,6 @@ export const GET: RequestHandler = async ({ cookies, url, setHeaders }) => {
 		'referrer-policy': 'no-referrer'
 	});
 	const result = await finishHackClubLogin({ cookies, url });
-	redirect(303, result === 'reviewer' ? '/reviews' : '/admin');
+	const next = safeNext(result.next);
+	redirect(303, afterLoginPath(result.status, next));
 };

@@ -4,7 +4,7 @@ import { northernAirtableConfigured } from '#lib/airtable-fields.ts';
 import { privateEnv } from '#lib/server/private-env.ts';
 import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
-import { currentAdminView } from '#lib/server/admin.ts';
+import { currentAdminView, enforceOwner, enforceStaff } from '#lib/server/admin.ts';
 import { fetchHackatimeProjects, formatHours } from '#lib/server/hackatime.ts';
 import { getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
@@ -25,6 +25,7 @@ export const prerender = false;
 export const load: PageServerLoad = async ({ cookies, setHeaders, url, params }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 	const admin = await currentAdminView(cookies, url);
+	enforceStaff(admin.status, url);
 	if (admin.status !== 'in' && admin.status !== 'reviewer') error(404, 'Not Found');
 	const id = Number(params.id);
 	if (!databaseConfigured() || !Number.isInteger(id)) error(404, 'Not Found');
@@ -74,6 +75,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 export const actions: Actions = {
 	review: async ({ request, cookies, url, params }) => {
 		const admin = await currentAdminView(cookies, url);
+		enforceStaff(admin.status, url);
 		if (admin.status !== 'in' && admin.status !== 'reviewer') error(404, 'Not Found');
 		const id = Number(params.id);
 		const db = await appDatabase();
@@ -114,12 +116,14 @@ export const actions: Actions = {
 	},
 	recheck: async ({ cookies, url, params }) => {
 		const admin = await currentAdminView(cookies, url);
+		enforceStaff(admin.status, url);
 		if (admin.status !== 'in' && admin.status !== 'reviewer') error(404, 'Not Found');
 		await runSubmissionChecks(Number(params.id));
 		redirect(303, `/reviews/${params.id}`);
 	},
 	sync: async ({ cookies, url, params }) => {
 		const admin = await currentAdminView(cookies, url);
+		enforceOwner(admin.status, url);
 		if (admin.status !== 'in') error(404, 'Not Found');
 		await pushOutbox(Number(params.id));
 		redirect(303, `/reviews/${params.id}`);

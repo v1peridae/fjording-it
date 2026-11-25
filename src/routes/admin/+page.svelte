@@ -60,6 +60,7 @@
 						<h2>sign in</h2>
 						<span class="sub">hack club auth</span>
 					</div>
+					{#if data.next}<input type="hidden" name="next" value={data.next} />{/if}
 					<div class="field">
 						<label for="email">your email</label>
 						<input id="email" type="email" name="email" placeholder="you@hackclub.com" value={form?.email ?? ''} required />
