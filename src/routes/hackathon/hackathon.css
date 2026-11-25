@@ -1,0 +1,752 @@
+/* fjording it /hackathon. torn and perforated paper only: no shadows, gradients, or glows. */
+
+body:has(.hackathon) {
+	background: #0d1526 none;
+	background-image: none;
+}
+
+.hackathon {
+	--night: #0d1526;
+	--ink: #07160a;
+	--cream: #f9f3d5;
+	--kiwi: #7ba35a;
+	--teal: #2fb3a0;
+	--violet: #6b5294;
+	--wrap: 1200px;
+	--display: 'Noailles Pirate 3D', serif;
+	--body: 'Noailles Pirate', serif;
+	--times: 'Noailles Times', serif;
+	position: relative;
+	overflow: hidden;
+	min-height: 100vh;
+	min-height: 100dvh;
+	background: var(--night);
+	color: var(--cream);
+	font-family: var(--body);
+	font-size: 25px;
+	line-height: 1.35;
+	-webkit-font-smoothing: antialiased;
+}
+
+.hackathon a {
+	color: inherit;
+}
+
+.hackathon a:focus-visible {
+	outline: 2px solid var(--cream);
+	outline-offset: 3px;
+}
+
+.hackathon .wrap {
+	max-width: var(--wrap);
+	margin: 0 auto;
+	padding: 0 40px;
+	position: relative;
+}
+
+.hackathon h1,
+.hackathon h2 {
+	font-family: var(--display);
+	font-weight: 400;
+}
+
+.hackathon h2 {
+	font-size: 58px;
+	line-height: 1;
+	margin: 0 0 6px;
+}
+
+.hackathon > .bg {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	margin: 0;
+}
+
+.hackathon > .bg img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+	object-position: 50% 100%;
+}
+
+.hackathon > :not(.bg) {
+	position: relative;
+	z-index: 1;
+}
+
+.hackathon .topbar {
+	position: relative;
+	z-index: 5;
+	background: var(--ink);
+	padding-bottom: 12px;
+	margin-bottom: -14px;
+}
+
+.hackathon nav {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 20px;
+	padding: 14px 0;
+}
+
+.hackathon nav .mini {
+	font-family: var(--display);
+	font-size: 30px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.hackathon nav .right {
+	display: flex;
+	align-items: center;
+	gap: 26px;
+}
+
+.hackathon nav ul {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-size: 21px;
+}
+
+.hackathon nav ul a {
+	text-decoration: none;
+	border-bottom: 2px solid var(--kiwi);
+}
+
+.hackathon .soon {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+	cursor: default;
+	line-height: 1.05;
+}
+
+.hackathon .soon .word {
+	border-bottom: 2px solid var(--kiwi);
+}
+
+.hackathon .soon .note {
+	font-family: var(--times);
+	font-size: 15px;
+	color: var(--kiwi);
+	white-space: nowrap;
+}
+
+.hackathon .tagwrap {
+	display: inline-flex;
+	align-items: center;
+	transform: rotate(-3deg);
+}
+
+.hackathon .tagwrap .string {
+	width: 30px;
+	height: 22px;
+	margin-right: -6px;
+	position: relative;
+	z-index: 1;
+}
+
+.hackathon .tag {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--cream);
+	color: var(--ink);
+	font-size: 19px;
+	line-height: 1.1;
+	padding: 5px 14px 5px 26px;
+	white-space: nowrap;
+	clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 calc(100% - 9px), 0 9px);
+}
+
+.hackathon .tag::before {
+	content: '';
+	position: absolute;
+	left: 9px;
+	top: 50%;
+	width: 8px;
+	height: 8px;
+	margin-top: -4px;
+	border-radius: 50%;
+	background: var(--ink);
+}
+
+.hackathon .tag .t {
+	font-family: var(--times);
+	font-size: 15px;
+}
+
+.hackathon .tag b {
+	font-weight: 400;
+	font-size: 20px;
+}
+
+.hackathon .strip {
+	display: inline-block;
+	background: var(--ink);
+	color: var(--cream);
+	padding: 20px 30px 22px;
+}
+
+.hackathon .strip h2 {
+	margin: 0;
+}
+
+.hackathon .hero {
+	padding: 70px 0 120px;
+	text-align: center;
+}
+
+.hackathon .geese {
+	display: flex;
+	justify-content: center;
+	align-items: flex-end;
+	gap: 70px;
+	height: 190px;
+	margin: 0 auto 6px;
+}
+
+.hackathon .geese img {
+	height: auto;
+	display: block;
+	max-width: none;
+}
+
+.hackathon .geese .g1 {
+	width: 190px;
+	transform: rotate(-3deg);
+}
+
+.hackathon .geese .g2 {
+	width: 200px;
+	margin-bottom: 30px;
+}
+
+.hackathon .geese .g3 {
+	width: 150px;
+	margin-bottom: 62px;
+	transform: rotate(-5deg);
+}
+
+.hackathon .mark {
+	position: relative;
+	display: inline-block;
+	text-align: left;
+}
+
+.hackathon .hero .mark h1 {
+	font-family: var(--display);
+	font-weight: 400;
+	font-size: 200px;
+	line-height: 1;
+	margin: 0;
+	white-space: nowrap;
+	text-decoration: underline;
+	text-decoration-thickness: from-font;
+	text-underline-position: from-font;
+	text-decoration-skip-ink: none;
+}
+
+.hackathon .hero .mark .hc {
+	position: absolute;
+	right: 10px;
+	bottom: -40px;
+	font-family: var(--times);
+	font-size: 32px;
+	letter-spacing: -0.05em;
+}
+
+.hackathon .subline {
+	display: inline-block;
+	margin-top: 58px;
+	padding: 12px 30px 16px;
+	font-family: var(--display);
+	font-size: 50px;
+	line-height: 1;
+	color: var(--cream);
+}
+
+.hackathon .row {
+	display: grid;
+	grid-template-columns: repeat(2, 340px);
+	justify-content: center;
+	gap: 32px;
+	margin-top: 86px;
+	align-items: stretch;
+	text-align: center;
+}
+
+.hackathon .row > * {
+	height: 170px;
+}
+
+.hackathon .when {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 10px;
+	padding: 0 20px;
+	font-size: 24px;
+}
+
+.hackathon .when b {
+	font-weight: 400;
+	font-family: var(--display);
+	font-size: 34px;
+	line-height: 1.1;
+}
+
+.hackathon .nw {
+	white-space: nowrap;
+}
+
+.hackathon .when .k {
+	font-family: var(--times);
+	font-size: 20px;
+	color: var(--kiwi);
+}
+
+.hackathon .ticket {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 26px 14px;
+}
+
+.hackathon .ticket .lbl {
+	font-size: 22px;
+	margin: 0 14px;
+	padding-bottom: 6px;
+	border-bottom: 2px dashed var(--ink);
+}
+
+.hackathon .count {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	font-family: var(--display);
+	font-size: 50px;
+	line-height: 1;
+	margin: 8px 0 0;
+}
+
+.hackathon .count span small {
+	display: block;
+	font-family: var(--body);
+	font-size: 17px;
+	margin-top: 3px;
+	font-weight: 400;
+}
+
+.hackathon section.block {
+	padding: 40px 0 60px;
+}
+
+.hackathon .headstrip {
+	margin-bottom: 28px;
+}
+
+.hackathon .prizes {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 36px;
+	align-items: stretch;
+}
+
+.hackathon .stipend {
+	padding: 40px 34px 42px;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 4px 22px;
+	align-items: center;
+}
+
+.hackathon .stipend .amt {
+	font-family: var(--display);
+	font-size: 88px;
+	line-height: 1;
+	margin: 0;
+	grid-row: span 2;
+}
+
+.hackathon .stipend .what {
+	font-family: var(--display);
+	font-size: 30px;
+	line-height: 1.05;
+	margin: 0;
+}
+
+.hackathon .stipend .top {
+	font-family: var(--times);
+	font-size: 20px;
+	margin: 0;
+	align-self: end;
+}
+
+.hackathon .stipend .fine {
+	grid-column: 1 / -1;
+	margin: 12px 0 0;
+	font-size: 21px;
+}
+
+.hackathon .cap {
+	background: var(--cream);
+	color: var(--ink);
+	padding: 22px 26px 22px 18px;
+	display: grid;
+	grid-template-columns: 170px 1fr;
+	gap: 0;
+	align-items: center;
+	transform: rotate(1deg);
+}
+
+.hackathon .cap > img {
+	width: 170px;
+	height: auto;
+	max-width: none;
+	display: block;
+	mix-blend-mode: multiply;
+}
+
+.hackathon .cap .back {
+	position: relative;
+	border-left: 2px solid var(--ink);
+	padding: 4px 0 4px 18px;
+	margin-left: 8px;
+}
+
+.hackathon .cap .back .what {
+	padding-right: 66px;
+}
+
+.hackathon .mini-stamp {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 56px;
+	height: 64px;
+	background: var(--teal);
+	display: grid;
+	place-items: center;
+}
+
+.hackathon .mini-stamp img {
+	width: 40px;
+	height: auto;
+	max-width: none;
+	display: block;
+}
+
+.hackathon .cap i.rule {
+	display: block;
+	height: 0;
+	margin-top: 14px;
+	border-top: 2px solid var(--ink);
+}
+
+.hackathon .cap .what {
+	font-family: var(--display);
+	font-size: 27px;
+	line-height: 1.05;
+	margin: 0 0 6px;
+}
+
+.hackathon .cap p {
+	margin: 0;
+	font-size: 21px;
+}
+
+.hackathon .rules {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 36px;
+	align-items: start;
+}
+
+.hackathon .rules .strip {
+	display: block;
+	padding: 28px 36px 32px;
+}
+
+.hackathon .headline {
+	font-family: var(--display);
+	font-size: 38px;
+	line-height: 1.12;
+	margin: 22px 0 0;
+}
+
+.hackathon .headline span {
+	background: var(--cream);
+	color: var(--ink);
+	padding: 0 8px;
+}
+
+.hackathon .rules dl {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 110px 1fr;
+	gap: 14px 18px;
+}
+
+.hackathon .rules dt {
+	font-family: var(--times);
+	font-size: 22px;
+	color: var(--kiwi);
+	padding-top: 3px;
+}
+
+.hackathon .rules dd {
+	margin: 0;
+	font-size: 24px;
+}
+
+.hackathon .chan {
+	font-family: var(--display);
+	background: var(--cream);
+	color: var(--ink);
+	padding: 0 8px;
+}
+
+.hackathon .foot-space {
+	height: 0;
+}
+
+.hackathon .paper{color:var(--ink);background:#b6b86d url('/hackathon/paper-texture.jpg') center/cover;
+  --m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 58 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' fill='%23000' d='M0 0H58V22H0Z M13 2 a16 16 0 1 0 32 0 a16 16 0 1 0 -32 0Z'/%3E%3C/svg%3E") top left/58px 22px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 58 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' fill='%23000' d='M0 0H58V22H0Z M13 20 a16 16 0 1 0 32 0 a16 16 0 1 0 -32 0Z'/%3E%3C/svg%3E") bottom left/58px 22px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none'%3E%3Crect width='10' height='10' fill='%23000'/%3E%3C/svg%3E") center/100% calc(100% - 42px) no-repeat;  -webkit-mask:var(--m);mask:var(--m)}
+/* torn and perforated edges, from the mockup masks */
+.hackathon .torn{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 6 L4.4 2.4 L9.8 2.9 L13.2 5.1 L21.7 8.7 L29.3 3.5 L35.5 4 L39.5 2.5 L43.8 9.8 L51.8 8.8 L59.6 3.2 L64.5 7.1 L71.9 9.2 L80.1 2.3 L86.8 7.5 L92.8 3.1 L98.7 2.3 L107.3 9.3 L113.5 4.2 L122 6.7 L130.3 9.1 L136.3 5.2 L142.9 5.4 L146.9 4.2 L154.8 1.9 L158.1 7.1 L162.7 6.3 L168.6 4.6 L177.6 3.3 L180 6 L180 4000 L0 4000Z'/%3E%3C/svg%3E") top left/180px 4000px repeat-x, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 3994 L5.8 3995.1 L9.6 3990.7 L12.6 3994 L21 3997.8 L27.4 3993 L30.6 3995.1 L37.8 3994.4 L45.2 3997.1 L49.6 3997.5 L55.6 3990.2 L62.2 3991.5 L67.5 3991.8 L71.1 3995.9 L78.1 3992 L83.7 3997.7 L88.3 3996.6 L93 3991.2 L97.2 3990.5 L105.4 3998 L110.7 3994.1 L113.9 3994.7 L122.3 3997.5 L128.9 3997.4 L135.3 3990.4 L139.6 3998.4 L143.1 3993.6 L146.2 3997.7 L152.1 3990.2 L157.7 3994.9 L164.5 3997.7 L171 3996.9 L177.6 3989.9 L180 3994 L180 0 L0 0Z'/%3E%3C/svg%3E") bottom left/180px 4000px repeat-x, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4000 180' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L7.7 4.6 L9.1 11.7 L3.6 15.8 L3.5 19.7 L2.7 27.1 L3.4 33.2 L5.4 38 L7 46 L4 49.1 L9.3 53 L8.8 60.9 L8.2 68.8 L8.6 77.5 L9.1 82.1 L8.3 88 L5.4 94.4 L5.4 99.6 L2.6 104.4 L8.7 112.4 L7.7 121.3 L8.2 127.6 L7.6 131.4 L3.1 137.1 L6.2 141.3 L5.6 145.8 L5.1 152.4 L5.9 156.2 L3.6 160.6 L4.8 164.8 L7.4 168.2 L5 177 L6 180 L4000 180 L4000 0Z'/%3E%3C/svg%3E") top left/4000px 180px repeat-y, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4000 180' preserveAspectRatio='none'%3E%3Cpath d='M3994 0 L3991.2 6.1 L3995.9 14.9 L3992.2 22.5 L3997.5 29.5 L3995 32.6 L3996.2 40.1 L3995.6 46.1 L3990 54.2 L3989.5 59.6 L3991.2 63 L3997.1 71.2 L3993.5 78.5 L3996.6 87.2 L3990.6 93.4 L3995.7 100.3 L3990 103.8 L3989.5 109.6 L3991.2 113.4 L3990.2 121.3 L3995.2 124.4 L3991.7 127.7 L3989.9 132.9 L3991.5 138.1 L3996.3 146.3 L3989.9 152.7 L3995.3 158.8 L3991.4 163.4 L3993.1 167.6 L3993.5 173.9 L3994 180 L0 180 L0 0Z'/%3E%3C/svg%3E") top right/4000px 180px repeat-y;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 6 L4.4 2.4 L9.8 2.9 L13.2 5.1 L21.7 8.7 L29.3 3.5 L35.5 4 L39.5 2.5 L43.8 9.8 L51.8 8.8 L59.6 3.2 L64.5 7.1 L71.9 9.2 L80.1 2.3 L86.8 7.5 L92.8 3.1 L98.7 2.3 L107.3 9.3 L113.5 4.2 L122 6.7 L130.3 9.1 L136.3 5.2 L142.9 5.4 L146.9 4.2 L154.8 1.9 L158.1 7.1 L162.7 6.3 L168.6 4.6 L177.6 3.3 L180 6 L180 4000 L0 4000Z'/%3E%3C/svg%3E") top left/180px 4000px repeat-x, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 3994 L5.8 3995.1 L9.6 3990.7 L12.6 3994 L21 3997.8 L27.4 3993 L30.6 3995.1 L37.8 3994.4 L45.2 3997.1 L49.6 3997.5 L55.6 3990.2 L62.2 3991.5 L67.5 3991.8 L71.1 3995.9 L78.1 3992 L83.7 3997.7 L88.3 3996.6 L93 3991.2 L97.2 3990.5 L105.4 3998 L110.7 3994.1 L113.9 3994.7 L122.3 3997.5 L128.9 3997.4 L135.3 3990.4 L139.6 3998.4 L143.1 3993.6 L146.2 3997.7 L152.1 3990.2 L157.7 3994.9 L164.5 3997.7 L171 3996.9 L177.6 3989.9 L180 3994 L180 0 L0 0Z'/%3E%3C/svg%3E") bottom left/180px 4000px repeat-x, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4000 180' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L7.7 4.6 L9.1 11.7 L3.6 15.8 L3.5 19.7 L2.7 27.1 L3.4 33.2 L5.4 38 L7 46 L4 49.1 L9.3 53 L8.8 60.9 L8.2 68.8 L8.6 77.5 L9.1 82.1 L8.3 88 L5.4 94.4 L5.4 99.6 L2.6 104.4 L8.7 112.4 L7.7 121.3 L8.2 127.6 L7.6 131.4 L3.1 137.1 L6.2 141.3 L5.6 145.8 L5.1 152.4 L5.9 156.2 L3.6 160.6 L4.8 164.8 L7.4 168.2 L5 177 L6 180 L4000 180 L4000 0Z'/%3E%3C/svg%3E") top left/4000px 180px repeat-y, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4000 180' preserveAspectRatio='none'%3E%3Cpath d='M3994 0 L3991.2 6.1 L3995.9 14.9 L3992.2 22.5 L3997.5 29.5 L3995 32.6 L3996.2 40.1 L3995.6 46.1 L3990 54.2 L3989.5 59.6 L3991.2 63 L3997.1 71.2 L3993.5 78.5 L3996.6 87.2 L3990.6 93.4 L3995.7 100.3 L3990 103.8 L3989.5 109.6 L3991.2 113.4 L3990.2 121.3 L3995.2 124.4 L3991.7 127.7 L3989.9 132.9 L3991.5 138.1 L3996.3 146.3 L3989.9 152.7 L3995.3 158.8 L3991.4 163.4 L3993.1 167.6 L3993.5 173.9 L3994 180 L0 180 L0 0Z'/%3E%3C/svg%3E") top right/4000px 180px repeat-y;-webkit-mask-composite:source-in;mask-composite:intersect}
+.hackathon .torn-bottom{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 3994 L5.8 3995.1 L9.6 3990.7 L12.6 3994 L21 3997.8 L27.4 3993 L30.6 3995.1 L37.8 3994.4 L45.2 3997.1 L49.6 3997.5 L55.6 3990.2 L62.2 3991.5 L67.5 3991.8 L71.1 3995.9 L78.1 3992 L83.7 3997.7 L88.3 3996.6 L93 3991.2 L97.2 3990.5 L105.4 3998 L110.7 3994.1 L113.9 3994.7 L122.3 3997.5 L128.9 3997.4 L135.3 3990.4 L139.6 3998.4 L143.1 3993.6 L146.2 3997.7 L152.1 3990.2 L157.7 3994.9 L164.5 3997.7 L171 3996.9 L177.6 3989.9 L180 3994 L180 0 L0 0Z'/%3E%3C/svg%3E") bottom left/180px 4000px repeat-x;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 4000' preserveAspectRatio='none'%3E%3Cpath d='M0 3994 L5.8 3995.1 L9.6 3990.7 L12.6 3994 L21 3997.8 L27.4 3993 L30.6 3995.1 L37.8 3994.4 L45.2 3997.1 L49.6 3997.5 L55.6 3990.2 L62.2 3991.5 L67.5 3991.8 L71.1 3995.9 L78.1 3992 L83.7 3997.7 L88.3 3996.6 L93 3991.2 L97.2 3990.5 L105.4 3998 L110.7 3994.1 L113.9 3994.7 L122.3 3997.5 L128.9 3997.4 L135.3 3990.4 L139.6 3998.4 L143.1 3993.6 L146.2 3997.7 L152.1 3990.2 L157.7 3994.9 L164.5 3997.7 L171 3996.9 L177.6 3989.9 L180 3994 L180 0 L0 0Z'/%3E%3C/svg%3E") bottom left/180px 4000px repeat-x}
+.hackathon .stamp{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 9' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H22V9H0Z M6.0 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top left/22px 9px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 9' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H22V9H0Z M6.0 9 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") bottom left/22px 9px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H9V22H0Z M-5 11.0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top left/9px 22px no-repeat round, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H9V22H0Z M4 11.0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top right/9px 22px no-repeat round, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none'%3E%3Crect width='10' height='10'/%3E%3C/svg%3E") center/calc(100% - 18px) calc(100% - 18px) no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 9' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H22V9H0Z M6.0 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top left/22px 9px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 9' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H22V9H0Z M6.0 9 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") bottom left/22px 9px round no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H9V22H0Z M-5 11.0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top left/9px 22px no-repeat round, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 22' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H9V22H0Z M4 11.0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0Z'/%3E%3C/svg%3E") top right/9px 22px no-repeat round, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none'%3E%3Crect width='10' height='10'/%3E%3C/svg%3E") center/calc(100% - 18px) calc(100% - 18px) no-repeat}
+
+@media (max-width: 760px) {
+	.hackathon {
+		font-size: 22px;
+	}
+
+	.hackathon .wrap {
+		padding: 0 18px;
+	}
+
+	.hackathon h2 {
+		font-size: 40px;
+	}
+
+	.hackathon nav {
+		padding: 10px 0;
+	}
+
+	.hackathon nav .mini {
+		font-size: 23px;
+	}
+
+	.hackathon nav .right {
+		gap: 10px;
+	}
+
+	.hackathon nav ul {
+		display: flex;
+		gap: 0;
+		font-size: 18px;
+	}
+
+	.hackathon nav ul li.opt {
+		display: none;
+	}
+
+	.hackathon .soon {
+		gap: 6px;
+	}
+
+	.hackathon .soon .note {
+		font-size: 13px;
+	}
+
+	.hackathon .tagwrap .string {
+		display: none;
+	}
+
+	.hackathon .tag {
+		font-size: 16px;
+		padding: 4px 10px 4px 22px;
+	}
+
+	.hackathon .tag .t {
+		font-size: 13px;
+	}
+
+	.hackathon .tag b {
+		font-size: 17px;
+	}
+
+	.hackathon > .bg img {
+		object-position: 64% 100%;
+	}
+
+	.hackathon .strip {
+		padding: 16px 20px 18px;
+	}
+
+	.hackathon .when {
+		padding: 0 20px;
+	}
+
+	.hackathon .foot-space {
+		height: 200px;
+	}
+
+	.hackathon .hero {
+		padding: 40px 0 70px;
+	}
+
+	.hackathon .geese {
+		gap: 22px;
+		height: 96px;
+	}
+
+	.hackathon .geese .g1 {
+		width: 92px;
+	}
+
+	.hackathon .geese .g2 {
+		width: 96px;
+		margin-bottom: 16px;
+	}
+
+	.hackathon .geese .g3 {
+		width: 72px;
+		margin-bottom: 32px;
+	}
+
+	.hackathon .hero .mark h1 {
+		font-size: 68px;
+	}
+
+	.hackathon .hero .mark .hc {
+		font-size: 17px;
+		bottom: -20px;
+		right: 4px;
+	}
+
+	.hackathon .subline {
+		font-size: 32px;
+		margin-top: 34px;
+		padding: 10px 20px 12px;
+	}
+
+	.hackathon .row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 18px;
+		margin-top: 44px;
+	}
+
+	.hackathon .row > * {
+		height: 150px;
+	}
+
+	.hackathon .when b {
+		font-size: 30px;
+	}
+
+	.hackathon section.block {
+		padding: 20px 0 40px;
+	}
+
+	.hackathon .headstrip {
+		margin-bottom: 22px;
+	}
+
+	.hackathon .headstrip h2 {
+		font-size: 34px;
+	}
+
+	.hackathon .prizes {
+		grid-template-columns: 1fr;
+		gap: 26px;
+	}
+
+	.hackathon .stipend {
+		padding: 36px 20px 38px;
+		gap: 2px 14px;
+	}
+
+	.hackathon .stipend .amt {
+		font-size: 68px;
+	}
+
+	.hackathon .stipend .what {
+		font-size: 24px;
+	}
+
+	.hackathon .stipend .top {
+		font-size: 17px;
+	}
+
+	.hackathon .stipend .fine {
+		font-size: 19px;
+	}
+
+	.hackathon .cap {
+		grid-template-columns: 110px 1fr;
+		padding: 20px 18px 20px 12px;
+	}
+
+	.hackathon .cap > img {
+		width: 110px;
+	}
+
+	.hackathon .cap .back {
+		padding-left: 12px;
+		margin-left: 4px;
+	}
+
+	.hackathon .cap .back .what {
+		padding-right: 50px;
+		font-size: 24px;
+	}
+
+	.hackathon .cap p {
+		font-size: 18px;
+	}
+
+	.hackathon .mini-stamp {
+		width: 44px;
+		height: 50px;
+	}
+
+	.hackathon .mini-stamp img {
+		width: 30px;
+	}
+
+	.hackathon .rules {
+		grid-template-columns: 1fr;
+		gap: 20px;
+	}
+
+	.hackathon .rules .strip {
+		padding: 24px 20px 26px;
+	}
+
+	.hackathon .headline {
+		font-size: 30px;
+	}
+
+	.hackathon .rules dl {
+		grid-template-columns: 1fr;
+		gap: 2px;
+	}
+
+	.hackathon .rules dd {
+		font-size: 21px;
+		margin-bottom: 14px;
+	}
+}

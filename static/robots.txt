@@ -1,3 +1,4 @@
-# the public site is crawlable; admin pages are not
+# the public site is crawlable; admin-only pages are not
 User-agent: *
 Disallow: /admin
+Disallow: /hackathon

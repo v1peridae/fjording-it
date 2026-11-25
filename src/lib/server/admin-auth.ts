@@ -78,11 +78,36 @@ export async function sealSession(email: string, secret: string, now = Date.now(
 	return seal({ email, exp: now + SESSION_MS }, secret);
 }
 
-export async function openSession(token: string, secret: string, now = Date.now()): Promise<string | null> {
+export type SessionClaims = {
+	email: string;
+	handle: string | null;
+};
+
+/** A slack-style handle stored on the session. Emails are not handles. */
+export function sessionHandle(value: unknown): string | null {
+	if (typeof value !== 'string') return null;
+	const trimmed = value.trim();
+	if (!trimmed || trimmed.length > 32 || /\s/.test(trimmed)) return null;
+	if (trimmed.includes('@') && !trimmed.startsWith('@')) return null;
+	const handle = trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+	if (!/^@[A-Za-z0-9._-]{1,31}$/.test(handle)) return null;
+	return handle;
+}
+
+export async function openSessionClaims(
+	token: string,
+	secret: string,
+	now = Date.now()
+): Promise<SessionClaims | null> {
 	const data = await openSealed(token, secret);
 	if (!data || typeof data.email !== 'string' || typeof data.exp !== 'number') return null;
 	if (data.exp <= now || !data.email) return null;
-	return data.email;
+	return { email: data.email, handle: sessionHandle(data.handle) };
+}
+
+export async function openSession(token: string, secret: string, now = Date.now()): Promise<string | null> {
+	const claims = await openSessionClaims(token, secret, now);
+	return claims?.email ?? null;
 }
 
 export type OauthAttempt = { state: string; nonce: string; exp: number };
