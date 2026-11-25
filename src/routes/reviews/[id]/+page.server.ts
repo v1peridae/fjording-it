@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { pushOutbox } from '#lib/server/airtable-sync.ts';
 import { northernAirtableConfigured } from '#lib/airtable-fields.ts';
-import { addressCheck, ageCheck } from '#lib/participant-identity.ts';
+import { addressCheck, ageYears } from '#lib/participant-identity.ts';
 import { privateEnv } from '#lib/server/private-env.ts';
 import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 			participant
 				? {
 						...participant,
-						age: ageCheck(participant.birthday),
+						age: ageYears(participant.birthday),
 						address: addressCheck(
 							participant.addressLine1 || participant.city || participant.country
 								? {

@@ -19,6 +19,7 @@ export function authorizeUrl(options: {
 	nonce: string;
 	loginHint?: string;
 	scope?: string;
+	prompt?: string;
 }): string {
 	const url = new URL(AUTHORIZE);
 	url.searchParams.set('client_id', options.clientId);
@@ -31,6 +32,7 @@ export function authorizeUrl(options: {
 		url.searchParams.set('login_hint', options.loginHint);
 		url.searchParams.set('email', options.loginHint);
 	}
+	if (options.prompt) url.searchParams.set('prompt', options.prompt);
 	return url.href;
 }
 

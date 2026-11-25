@@ -7,6 +7,7 @@ export const AIRTABLE_FIELDS = {
 	github: 'GitHub Username',
 	firstName: 'First Name',
 	lastName: 'Last Name',
+	/** Date column. The YSWS table has no separate Age column; age is computed from this date. */
 	birthday: 'Birthday',
 	address1: 'Address (Line 1)',
 	address2: 'Address (Line 2)',
