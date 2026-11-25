@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { pushOutbox } from '#lib/server/airtable-sync.ts';
 import { northernAirtableConfigured } from '#lib/airtable-fields.ts';
+import { addressCheck, ageCheck } from '#lib/participant-identity.ts';
 import { privateEnv } from '#lib/server/private-env.ts';
 import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
@@ -57,7 +58,26 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		handle: admin.handle,
 		githubUsername: connection?.githubUsername ?? null,
 		hackatimeUserId: connection?.hackatimeUserId ?? null,
-		participant: await participantForSubmission(db, id),
+		participant: await participantForSubmission(db, id).then((participant) =>
+			participant
+				? {
+						...participant,
+						age: ageCheck(participant.birthday),
+						address: addressCheck(
+							participant.addressLine1 || participant.city || participant.country
+								? {
+										line1: participant.addressLine1,
+										line2: participant.addressLine2,
+										city: participant.city,
+										state: participant.state,
+										postalCode: participant.postalCode,
+										country: participant.country
+									}
+								: null
+						)
+					}
+				: null
+		),
 		submission,
 		reviews: await listReviews(db, id),
 		checks: await latestChecks(db, id),
