@@ -1,5 +1,5 @@
 import pg from 'pg';
-import migrationSql from '../../../migrations/001_northern_challenge.sql?raw';
+import { assertCreateOnly } from '../migrations.ts';
 
 export class DatabaseUnconfigured extends Error {
 	constructor() {
@@ -11,7 +11,11 @@ export type Sql = {
 	query(text: string, values?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
 };
 
-const MIGRATION = '001_northern_challenge.sql';
+const migrations = import.meta.glob('../../../migrations/*.sql', {
+	eager: true,
+	query: '?raw',
+	import: 'default'
+}) as Record<string, string>;
 
 let pool: pg.Pool | null = null;
 
@@ -25,15 +29,39 @@ export function getPool(connectionString: string): pg.Pool {
 	return pool;
 }
 
-export async function migrate(db: Sql): Promise<void> {
-	await db.query(
-		`CREATE TABLE IF NOT EXISTS schema_migrations (
-			filename text PRIMARY KEY,
-			applied_at timestamptz NOT NULL DEFAULT now()
-		)`
-	);
-	const seen = await db.query('SELECT 1 FROM schema_migrations WHERE filename = $1', [MIGRATION]);
-	if (seen.rows.length > 0) return;
-	await db.query(migrationSql);
-	await db.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [MIGRATION]);
+export function migrationFiles(): { name: string; sql: string }[] {
+	return Object.entries(migrations)
+		.map(([path, sql]) => ({ name: path.split('/').pop() ?? path, sql }))
+		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function migrate(db: pg.Pool): Promise<void> {
+	const client = await db.connect();
+	try {
+		await client.query('SELECT pg_advisory_lock($1)', [481516234]);
+		await client.query(
+			`CREATE TABLE IF NOT EXISTS schema_migrations (
+				filename text PRIMARY KEY,
+				applied_at timestamptz NOT NULL DEFAULT now()
+			)`
+		);
+		for (const file of migrationFiles()) {
+			const seen = await client.query('SELECT 1 FROM schema_migrations WHERE filename = $1', [file.name]);
+			if (seen.rows.length > 0) continue;
+			assertCreateOnly(file.name, file.sql);
+			await client.query('BEGIN');
+			try {
+				await client.query(file.sql);
+				await client.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [file.name]);
+				await client.query('COMMIT');
+				console.log(`applied migration ${file.name}`);
+			} catch (err) {
+				await client.query('ROLLBACK');
+				throw err;
+			}
+		}
+	} finally {
+		await client.query('SELECT pg_advisory_unlock($1)', [481516234]).catch(() => undefined);
+		client.release();
+	}
 }
