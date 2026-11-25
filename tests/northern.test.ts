@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { assertCreateOnly } from '../src/lib/migrations.ts';
 import { airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
 import {
 	copiedProjectCheck,
@@ -101,4 +102,12 @@ test('the migration creates tables and does not remove them', () => {
 	assert.match(sql, /CREATE TABLE IF NOT EXISTS reviewer_audit/);
 	assert.doesNotMatch(sql, /\bdrop\s+table\b/i);
 	assert.doesNotMatch(sql, /\bdelete\s+from\b/i);
+	assertCreateOnly('001_northern_challenge.sql', sql);
+	assert.throws(() => assertCreateOnly('bad.sql', 'DROP TABLE submissions'), /create-only/);
+	const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+		scripts: { start: string };
+		engines: { node: string };
+	};
+	assert.equal(pkg.scripts.start, 'node build');
+	assert.match(pkg.engines.node, />=22\.17/);
 });
