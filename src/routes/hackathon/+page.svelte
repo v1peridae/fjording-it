@@ -2,6 +2,7 @@
 	import { countdownAt } from '#lib/hackathon.ts';
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';
+	import AdminNav from '#lib/AdminNav.svelte';
 	import './hackathon.css';
 
 	let { data }: PageProps = $props();
@@ -33,6 +34,7 @@
 </svelte:head>
 
 <div class="hackathon">
+	<div class="wrap" style="padding-top: 8px"><AdminNav route="/hackathon" email={data.email} handle={data.handle} /></div>
 	<picture class="bg">
 		<source media="(max-width: 760px)" srcset="/hackathon/lauklines-3600.jpg" />
 		<img
@@ -54,12 +56,7 @@
 					<ul>
 						<li class="opt"><a href="#prizes">prizes</a></li>
 						<li class="opt"><a href="#rules">rules</a></li>
-						<li>
-							<span class="soon" aria-disabled="true">
-								<span class="word">submit</span>
-								<span class="note">opens nov 27</span>
-							</span>
-						</li>
+						<li><a href="/hackathon/submit">submit</a></li>
 					</ul>
 					{#if data.handle}
 						<span class="tagwrap">

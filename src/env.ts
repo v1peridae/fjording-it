@@ -23,5 +23,29 @@ export const variables = defineEnvVars({
 	ADMIN_EMAILS: {
 		description: 'Comma-separated admin allowlist. Defaults to johnny@hackclub.com when unset.',
 		schema: optional
+	},
+	HACKATIME_CLIENT_ID: {
+		description: 'Hackatime OAuth client id. Server-side only. Redirect URI must be https://fjording.hackclub.com/auth/hackatime/callback.',
+		schema: optional
+	},
+	HACKATIME_CLIENT_SECRET: {
+		description: 'Hackatime OAuth client secret. Server-side only.',
+		schema: optional
+	},
+	DATABASE_URL: {
+		description: 'Postgres connection string. Server-side only. Required for submissions and reviews.',
+		schema: optional
+	},
+	NORTHERN_AIRTABLE_BASE_ID: {
+		description: 'Airtable base for HQ-confirmed submissions. Not the sign-ups base and not the Unified base.',
+		schema: optional
+	},
+	NORTHERN_AIRTABLE_TABLE: {
+		description: 'Existing YSWS Project Submission table in NORTHERN_AIRTABLE_BASE_ID. This app does not create tables.',
+		schema: optional
+	},
+	GITHUB_TOKEN: {
+		description: 'Optional token for review checks against the public GitHub API.',
+		schema: optional
 	}
 });

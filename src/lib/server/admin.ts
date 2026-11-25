@@ -19,12 +19,13 @@ import {
 	verifiedEmail
 } from './admin-auth';
 import { adminCallbackDecision } from '../signup-stats';
+import { reviewerStagesFor } from './access.ts';
 
 const SESSION_COOKIE = 'admin_session';
 const OAUTH_COOKIE = 'admin_oauth';
 const FLASH_COOKIE = 'admin_flash';
-/** Same session, two paths: /admin keeps the stats pages, /hackathon can read it too. */
-const SESSION_PATHS = ['/admin', '/hackathon'] as const;
+/** Owners and reviewers share one session cookie, scoped to the pages that read it. */
+const SESSION_PATHS = ['/admin', '/hackathon', '/reviews'] as const;
 
 type Flash = 'denied' | 'failed';
 
@@ -51,7 +52,8 @@ function writeSession(cookies: Cookies, url: URL, token: string) {
 }
 
 export type AdminView =
-	| { status: 'in'; email: string; handle: string | null }
+	| { status: 'in'; email: string; handle: string | null; role: 'owner' }
+	| { status: 'reviewer'; email: string; handle: string | null; stages: string[] }
 	| { status: 'denied' }
 	| { status: 'out' };
 
@@ -65,11 +67,13 @@ export async function currentAdminView(cookies: Cookies, url: URL): Promise<Admi
 		clearSession(cookies, url);
 		return { status: 'out' };
 	}
-	if (adminCallbackDecision(claims.email, ADMIN_EMAILS) === 'deny') {
-		clearSession(cookies, url);
-		return { status: 'denied' };
+	if (adminCallbackDecision(claims.email, ADMIN_EMAILS) === 'allow') {
+		return { status: 'in', email: claims.email, handle: claims.handle, role: 'owner' };
 	}
-	return { status: 'in', email: claims.email, handle: claims.handle };
+	const stages = await reviewerStagesFor(claims.email);
+	if (stages.length > 0) return { status: 'reviewer', email: claims.email, handle: claims.handle, stages };
+	clearSession(cookies, url);
+	return { status: 'denied' };
 }
 
 function authConfig() {
@@ -90,7 +94,10 @@ function missingAuthEnv(): string[] {
 }
 
 export async function currentAdmin(cookies: Cookies, url: URL): Promise<'in' | 'denied' | 'out'> {
-	return (await currentAdminView(cookies, url)).status;
+	const status = (await currentAdminView(cookies, url)).status;
+	if (status === 'in') return 'in';
+	if (status === 'denied') return 'denied';
+	return 'out';
 }
 
 export function takeFlash(cookies: Cookies, url: URL): Flash | null {
@@ -136,7 +143,7 @@ export async function beginHackClubLogin(options: {
 	}), { external: ['https://auth.hackclub.com'] });
 }
 
-export async function finishHackClubLogin(options: { cookies: Cookies; url: URL }): Promise<void> {
+export async function finishHackClubLogin(options: { cookies: Cookies; url: URL }): Promise<'owner' | 'reviewer' | 'denied' | 'failed'> {
 	const config = authConfig();
 	const token = options.cookies.get(OAUTH_COOKIE);
 	options.cookies.delete(OAUTH_COOKIE, cookieOptions(options.url));
@@ -148,7 +155,7 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 
 	if (!config || !token) {
 		fail(config ? 'missing oauth cookie' : `missing ${missingAuthEnv().join(', ')}`);
-		return;
+		return 'failed';
 	}
 
 	const attempt = await openOauth(token, config.sessionSecret);
@@ -158,7 +165,7 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 
 	if (providerError || !attempt || !code || !state || !sameToken(state, attempt.state)) {
 		fail(providerError ? `provider ${providerError}` : 'oauth state mismatch');
-		return;
+		return 'failed';
 	}
 
 	try {
@@ -170,18 +177,23 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 			clientSecret: config.clientSecret
 		});
 
-		if (adminCallbackDecision(email, ADMIN_EMAILS) === 'deny') {
+		const owner = adminCallbackDecision(email, ADMIN_EMAILS) === 'allow';
+		const reviewer = owner ? false : (await reviewerStagesFor(email)).length > 0;
+		if (!owner && !reviewer) {
 			clearSession(options.cookies, options.url);
 			console.error(`admin sign-in denied for ${email}`);
 			setFlash(options.cookies, options.url, 'denied');
-			return;
+			return 'denied';
 		}
 
 		writeSession(options.cookies, options.url, await sealSession(email, config.sessionSecret));
 		clearFlash(options.cookies, options.url);
+		return owner ? 'owner' : 'reviewer';
 	} catch (err) {
 		fail(err instanceof Error ? err.message : 'failed');
+		return 'failed';
 	}
+	return 'failed';
 }
 
 async function emailFromCode(options: {

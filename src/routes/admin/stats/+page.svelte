@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AdminNav from '#lib/AdminNav.svelte';
 	import type { PageProps } from './$types';
 	import Charts from './Charts.svelte';
 
@@ -17,10 +18,16 @@
 
 <main class="relative min-h-dvh px-4 py-8 text-[18px] text-ink md:px-6 md:py-12">
 	<div class="mx-auto flex w-full max-w-[960px] flex-col gap-5">
+		<div class="bg-ink px-2 pb-2 text-cream">
+			<AdminNav active="stats" route="/admin/stats" email={data.email} handle={data.handle} />
+		</div>
 		{#if data.view === 'stats'}
 			<header class="border-2 border-ink bg-cream px-5 py-6 text-center md:px-8">
 				<h1 class="text-[40px] leading-none text-balance md:text-[52px]">{data.report.line}</h1>
 				<p class="mt-3 text-[18px]">times below are eastern time</p>
+				<p class="mt-3 text-[18px]">
+					<a class="underline decoration-from-font" href="/reviews">reviews</a>
+				</p>
 			</header>
 
 			<div class="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -80,33 +87,7 @@
 			</section>
 		{:else}
 			<div class="mx-auto w-full max-w-[520px] border-2 border-ink bg-cream px-6 py-8 text-center">
-				{#if data.view === 'denied'}
-					<h1 class="text-[40px] leading-none">not authorised</h1>
-				{:else if data.view === 'error'}
-					<h1 class="text-[32px] leading-none text-rust">couldn't load sign-ups</h1>
-				{:else}
-					<h1 class="mb-6 font-pirate-3d text-[40px] underline decoration-from-font">admin</h1>
-					<form method="POST" action="?/signin" class="flex flex-col gap-2 md:flex-row">
-						<input
-							type="email"
-							name="email"
-							placeholder="you@hackclub.com"
-							aria-label="your email"
-							autocomplete="email"
-							maxlength="254"
-							value={form?.email ?? ''}
-							class="h-12 w-full min-w-0 border border-ink bg-cream px-3.5 font-pirate-3d text-[18px] text-ink placeholder:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink md:flex-1"
-						/>
-						<button
-							class="h-12 cursor-pointer bg-ink px-4 font-pirate-3d text-[20px] text-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink md:w-32"
-						>
-							sign in
-						</button>
-					</form>
-					{#if form?.error || data.error}
-						<p class="mt-3 text-[16px] text-rust">{form?.error ?? data.error}</p>
-					{/if}
-				{/if}
+				<h1 class="text-[32px] leading-none text-rust">couldn't load sign-ups</h1>
 			</div>
 		{/if}
 	</div>
