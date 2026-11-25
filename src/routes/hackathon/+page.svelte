@@ -113,10 +113,10 @@
 					<p class="fine">unlocks when you buy your ticket. capped at what your flight really costs.</p>
 				</div>
 				<div class="cap torn">
-					<!-- Swap the cap here: static/hackathon/cap.png. 756w is the file shipped now; a larger replacement stays sharp at 170px / 110px. -->
+					<!-- Full cap: static/hackathon/cap.png (2000px). cap-600.png is the srcset candidate for the 170px / 110px slot. -->
 					<img
 						src="/hackathon/cap.png"
-						srcset="/hackathon/cap.png 756w"
+						srcset="/hackathon/cap-600.png 600w, /hackathon/cap.png 2000w"
 						sizes="(max-width: 760px) 110px, 170px"
 						alt="navy fjording it dad cap: three geese over the wordmark"
 					/>
