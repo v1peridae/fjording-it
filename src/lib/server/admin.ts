@@ -1,9 +1,4 @@
-import {
-	ADMIN_EMAILS,
-	ADMIN_SESSION_SECRET,
-	HACKCLUB_AUTH_CLIENT_ID,
-	HACKCLUB_AUTH_CLIENT_SECRET
-} from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { redirect, type Cookies } from '@sveltejs/kit';
 import {
 	OAUTH_MS,
@@ -58,16 +53,17 @@ export type AdminView =
 	| { status: 'out' };
 
 export async function currentAdminView(cookies: Cookies, url: URL): Promise<AdminView> {
-	if (!ADMIN_SESSION_SECRET) return { status: 'out' };
+	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');
+	if (!sessionSecret) return { status: 'out' };
 	const token = cookies.get(SESSION_COOKIE);
 	if (!token) return { status: 'out' };
 
-	const claims = await openSessionClaims(token, ADMIN_SESSION_SECRET);
+	const claims = await openSessionClaims(token, sessionSecret);
 	if (!claims) {
 		clearSession(cookies, url);
 		return { status: 'out' };
 	}
-	if (adminCallbackDecision(claims.email, ADMIN_EMAILS) === 'allow') {
+	if (adminCallbackDecision(claims.email, privateEnv('ADMIN_EMAILS')) === 'allow') {
 		return { status: 'in', email: claims.email, handle: claims.handle, role: 'owner' };
 	}
 	const stages = await reviewerStagesFor(claims.email);
@@ -77,19 +73,18 @@ export async function currentAdminView(cookies: Cookies, url: URL): Promise<Admi
 }
 
 function authConfig() {
-	if (!HACKCLUB_AUTH_CLIENT_ID || !HACKCLUB_AUTH_CLIENT_SECRET || !ADMIN_SESSION_SECRET) return null;
-	return {
-		clientId: HACKCLUB_AUTH_CLIENT_ID,
-		clientSecret: HACKCLUB_AUTH_CLIENT_SECRET,
-		sessionSecret: ADMIN_SESSION_SECRET
-	};
+	const clientId = privateEnv('HACKCLUB_AUTH_CLIENT_ID');
+	const clientSecret = privateEnv('HACKCLUB_AUTH_CLIENT_SECRET');
+	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');
+	if (!clientId || !clientSecret || !sessionSecret) return null;
+	return { clientId, clientSecret, sessionSecret };
 }
 
 function missingAuthEnv(): string[] {
 	const missing: string[] = [];
-	if (!HACKCLUB_AUTH_CLIENT_ID) missing.push('HACKCLUB_AUTH_CLIENT_ID');
-	if (!HACKCLUB_AUTH_CLIENT_SECRET) missing.push('HACKCLUB_AUTH_CLIENT_SECRET');
-	if (!ADMIN_SESSION_SECRET) missing.push('ADMIN_SESSION_SECRET');
+	if (!privateEnv('HACKCLUB_AUTH_CLIENT_ID')) missing.push('HACKCLUB_AUTH_CLIENT_ID');
+	if (!privateEnv('HACKCLUB_AUTH_CLIENT_SECRET')) missing.push('HACKCLUB_AUTH_CLIENT_SECRET');
+	if (!privateEnv('ADMIN_SESSION_SECRET')) missing.push('ADMIN_SESSION_SECRET');
 	return missing;
 }
 
@@ -177,7 +172,7 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 			clientSecret: config.clientSecret
 		});
 
-		const owner = adminCallbackDecision(email, ADMIN_EMAILS) === 'allow';
+		const owner = adminCallbackDecision(email, privateEnv('ADMIN_EMAILS')) === 'allow';
 		const reviewer = owner ? false : (await reviewerStagesFor(email)).length > 0;
 		if (!owner && !reviewer) {
 			clearSession(options.cookies, options.url);

@@ -1,8 +1,7 @@
-import { ADMIN_EMAILS } from '$app/env/private';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { pushOutbox } from '#lib/server/airtable-sync.ts';
 import { northernAirtableConfigured } from '#lib/airtable-fields.ts';
-import { AIRTABLE_BASE_ID, AIRTABLE_TOKEN, NORTHERN_AIRTABLE_BASE_ID, NORTHERN_AIRTABLE_TABLE } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView } from '#lib/server/admin.ts';
@@ -33,7 +32,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 	const submission = await getSubmission(db, id);
 	if (!submission) error(404, 'Not Found');
 	const stage = isStage(submission.stage) ? submission.stage : null;
-	const allowed = stage ? await canAct(admin.email, stage, ADMIN_EMAILS) : false;
+	const allowed = stage ? await canAct(admin.email, stage, privateEnv('ADMIN_EMAILS')) : false;
 	const connection = await readHackatimeConnection(db, submission.email);
 	let liveHours: string | null = null;
 	let liveNote = '';
@@ -46,10 +45,10 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		else liveHours = formatHours(match.totalSeconds);
 	}
 	const airtable = northernAirtableConfigured({
-		token: AIRTABLE_TOKEN,
-		baseId: NORTHERN_AIRTABLE_BASE_ID,
-		table: NORTHERN_AIRTABLE_TABLE,
-		signupsBaseId: AIRTABLE_BASE_ID
+		token: privateEnv('AIRTABLE_TOKEN'),
+		baseId: privateEnv('NORTHERN_AIRTABLE_BASE_ID'),
+		table: privateEnv('NORTHERN_AIRTABLE_TABLE'),
+		signupsBaseId: privateEnv('AIRTABLE_BASE_ID')
 	});
 	return {
 		role: admin.status === 'in' ? ('owner' as const) : ('reviewer' as const),
@@ -80,7 +79,7 @@ export const actions: Actions = {
 		const submission = await getSubmission(db, id);
 		const stage = submission?.stage;
 		if (!submission || !stage || !isStage(stage)) error(404, 'Not Found');
-		if (!(await canAct(admin.email, stage, ADMIN_EMAILS))) error(404, 'Not Found');
+		if (!(await canAct(admin.email, stage, privateEnv('ADMIN_EMAILS')))) error(404, 'Not Found');
 
 		const data = await request.formData();
 		const decision = String(data.get('decision') ?? '') as Decision;

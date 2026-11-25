@@ -1,4 +1,3 @@
-import { ADMIN_EMAILS } from '$app/env/private';
 import { error, fail } from '@sveltejs/kit';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView } from '#lib/server/admin.ts';

@@ -1,10 +1,10 @@
-import { DATABASE_URL } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { DatabaseUnconfigured, databaseUrl, getPool, migrate, type Sql } from './db.ts';
 
 export { DatabaseUnconfigured };
 
 export async function withTransaction<T>(fn: (db: Sql) => Promise<T>): Promise<T> {
-	const url = databaseUrl(DATABASE_URL);
+	const url = databaseUrl(privateEnv('DATABASE_URL'));
 	if (!url) throw new DatabaseUnconfigured();
 	const client = await getPool(url).connect();
 	try {
@@ -23,12 +23,12 @@ export async function withTransaction<T>(fn: (db: Sql) => Promise<T>): Promise<T
 let ready: Promise<Sql> | null = null;
 
 export function appDatabase(): Promise<Sql> {
-	const url = databaseUrl(DATABASE_URL);
+	const url = databaseUrl(privateEnv('DATABASE_URL'));
 	if (!url) return Promise.reject(new DatabaseUnconfigured());
 	ready ??= migrate(getPool(url)).then(() => getPool(url));
 	return ready;
 }
 
 export function databaseConfigured(): boolean {
-	return databaseUrl(DATABASE_URL) !== null;
+	return databaseUrl(privateEnv('DATABASE_URL')) !== null;
 }

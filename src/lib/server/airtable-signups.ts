@@ -1,4 +1,4 @@
-import { AIRTABLE_BASE_ID, AIRTABLE_TABLE, AIRTABLE_TOKEN } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { readSignups, summarizeSignups, type AirtablePage, type SignupReport } from '../signup-stats';
 
 let cache: { at: number; report: SignupReport } | null = null;
@@ -32,13 +32,17 @@ async function fetchPage(offset: string): Promise<AirtablePage> {
 	});
 	if (offset) params.set('offset', offset);
 
-	const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE)}?${params}`;
+	const token = privateEnv('AIRTABLE_TOKEN');
+	const baseId = privateEnv('AIRTABLE_BASE_ID');
+	const table = privateEnv('AIRTABLE_TABLE');
+	if (!token || !baseId || !table) throw new Error('airtable sign-ups are not configured');
+	const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?${params}`;
 	let lastStatus = 0;
 
 	for (let attempt = 0; attempt < 4; attempt++) {
 		const res = await fetch(url, {
 			headers: {
-				authorization: `Bearer ${AIRTABLE_TOKEN}`,
+				authorization: `Bearer ${token}`,
 				accept: 'application/json'
 			},
 			signal: AbortSignal.timeout(15_000)

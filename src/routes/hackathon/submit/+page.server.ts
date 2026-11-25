@@ -1,4 +1,4 @@
-import { ADMIN_SESSION_SECRET, HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { seal } from '#lib/server/admin-auth.ts';
 import { currentAdminView } from '#lib/server/admin.ts';
@@ -38,7 +38,10 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		cookies.delete(SHIPPED, { path: '/hackathon', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:' });
 	}
 
-	const configured = Boolean(hackatimeCredentials({ HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET }));
+	const configured = Boolean(hackatimeCredentials({
+		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
+		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
+	}));
 	const phase = submitPhase(new Date());
 	const allowed = canSubmit(phase, true);
 	const notice = hackatimeNotice(url.searchParams.get('hackatime'), configured);
@@ -61,10 +64,10 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	}
 
 	const ticket =
-		configured && ADMIN_SESSION_SECRET
+		configured && privateEnv('ADMIN_SESSION_SECRET')
 			? await seal(
 					{ purpose: 'hackatime-start', email: admin.email, exp: Date.now() + 10 * 60 * 1000 },
-					ADMIN_SESSION_SECRET
+					privateEnv('ADMIN_SESSION_SECRET')!
 				)
 			: null;
 
@@ -97,7 +100,10 @@ async function liveProjects(email: string): Promise<{
 	failed: boolean;
 }> {
 	const empty = { github: null, linked: false, projects: [], failed: false };
-	const client = hackatimeCredentials({ HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET });
+	const client = hackatimeCredentials({
+		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
+		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
+	});
 	if (!client) return empty;
 
 	const db = await appDatabase();
@@ -164,7 +170,10 @@ export const actions: Actions = {
 			return fail(400, { ...values, error: 'check the name, the story, and both links' });
 		}
 
-		const client = hackatimeCredentials({ HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET });
+		const client = hackatimeCredentials({
+		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
+		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
+	});
 		if (!client) return fail(400, { ...values, error: 'Hackatime not connected yet' });
 
 		const live = await liveProjects(admin.email);

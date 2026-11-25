@@ -1,4 +1,4 @@
-import { ADMIN_EMAILS, ADMIN_SESSION_SECRET, HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { openSealed } from '#lib/server/admin-auth.ts';
 import { appDatabase } from '#lib/server/app-db.ts';
 import {
@@ -24,7 +24,7 @@ function back(status: string) {
 }
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-	const secret = ADMIN_SESSION_SECRET;
+	const secret = privateEnv('ADMIN_SESSION_SECRET');
 	const sealed = secret ? await openSealed(cookies.get(STATE_COOKIE) ?? '', secret) : null;
 	cookies.delete(STATE_COOKIE, {
 		path: '/auth/hackatime',
@@ -35,7 +35,10 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 
 	if (url.searchParams.get('error')) return back('failed');
 
-	const client = hackatimeCredentials({ HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET });
+	const client = hackatimeCredentials({
+		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
+		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
+	});
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
 	const email = typeof sealed?.email === 'string' ? sealed.email : '';
@@ -47,7 +50,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		typeof sealed.exp !== 'number' ||
 		sealed.exp <= Date.now() ||
 		!email ||
-		!isAdminEmail(email, ADMIN_EMAILS) ||
+		!isAdminEmail(email, privateEnv('ADMIN_EMAILS')) ||
 		!code ||
 		!state ||
 		!statesMatch(state, sealed.state)

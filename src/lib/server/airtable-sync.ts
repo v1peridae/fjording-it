@@ -1,4 +1,4 @@
-import { AIRTABLE_BASE_ID, AIRTABLE_TABLE, AIRTABLE_TOKEN, NORTHERN_AIRTABLE_BASE_ID, NORTHERN_AIRTABLE_TABLE } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { AIRTABLE_FIELDS, airtableRecordFields, northernAirtableConfigured } from '../airtable-fields.ts';
 import { appDatabase } from './app-db.ts';
 import { latestOutbox, listReviews, markOutbox, readHackatimeConnection, submissionScreenshot } from './northern-store.ts';
@@ -9,11 +9,11 @@ export async function pushOutbox(submissionId: number): Promise<void> {
 	if (!outbox || outbox.status === 'synced') return;
 
 	const config = northernAirtableConfigured({
-		token: AIRTABLE_TOKEN,
-		baseId: NORTHERN_AIRTABLE_BASE_ID,
-		table: NORTHERN_AIRTABLE_TABLE,
-		signupsBaseId: AIRTABLE_BASE_ID,
-		signupsTable: AIRTABLE_TABLE
+		token: privateEnv('AIRTABLE_TOKEN'),
+		baseId: privateEnv('NORTHERN_AIRTABLE_BASE_ID'),
+		table: privateEnv('NORTHERN_AIRTABLE_TABLE'),
+		signupsBaseId: privateEnv('AIRTABLE_BASE_ID'),
+		signupsTable: privateEnv('AIRTABLE_TABLE')
 	});
 	if ('error' in config) {
 		await markOutbox(db, outbox.id, { status: 'not_configured', lastError: config.error });
