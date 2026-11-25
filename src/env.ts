@@ -5,9 +5,18 @@ function optional(value: string | undefined) {
 }
 
 export const variables = defineEnvVars({
-	AIRTABLE_TOKEN: {},
-	AIRTABLE_BASE_ID: {},
-	AIRTABLE_TABLE: {},
+	AIRTABLE_TOKEN: {
+		description: 'Sign-ups Airtable token. Read at runtime. The build does not require it.',
+		schema: optional
+	},
+	AIRTABLE_BASE_ID: {
+		description: 'Sign-ups Airtable base id. Read at runtime. The build does not require it.',
+		schema: optional
+	},
+	AIRTABLE_TABLE: {
+		description: 'Sign-ups Airtable table. Read at runtime. The build does not require it.',
+		schema: optional
+	},
 	HACKCLUB_AUTH_CLIENT_ID: {
 		description: 'OAuth client id from https://auth.hackclub.com/developer/apps. Server-side only.',
 		schema: optional

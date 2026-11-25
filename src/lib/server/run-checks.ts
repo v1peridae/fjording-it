@@ -1,4 +1,4 @@
-import { GITHUB_TOKEN } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import {
 	copiedProjectCheck,
 	hackatimeLapseCheck,
@@ -121,7 +121,8 @@ async function readConnection(db: Awaited<ReturnType<typeof appDatabase>>, email
 
 async function gh(path: string): Promise<{ status: number; ok: boolean; json: unknown | null }> {
 	const headers: Record<string, string> = { accept: 'application/vnd.github+json', 'user-agent': 'fjording-it' };
-	if (GITHUB_TOKEN) headers.authorization = `Bearer ${GITHUB_TOKEN}`;
+	const githubToken = privateEnv('GITHUB_TOKEN');
+	if (githubToken) headers.authorization = `Bearer ${githubToken}`;
 	try {
 		const res = await fetch(`https://api.github.com${path}`, { headers, signal: AbortSignal.timeout(8000) });
 		const json = await res.json().catch(() => null);

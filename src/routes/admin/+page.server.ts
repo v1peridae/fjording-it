@@ -1,4 +1,4 @@
-import { ADMIN_EMAILS } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { error, fail } from '@sveltejs/kit';
 import { medianHoursLabel } from '#lib/admin-charts.ts';
 import { median } from '#lib/review-pipeline.ts';
@@ -83,7 +83,7 @@ function shapePeople(
 		const count = (decision: string) => reviews.filter((review) => review.decision === decision).length;
 		return {
 			email,
-			owner: isAdminEmail(email, ADMIN_EMAILS),
+			owner: isAdminEmail(email, privateEnv('ADMIN_EMAILS')),
 			stages: directory.find((reviewer) => reviewer.email === email)?.stages ?? [],
 			firstPass: reviews.filter((review) => review.stage === 'first_pass').length,
 			fraud: reviews.filter((review) => review.stage === 'fraud').length,

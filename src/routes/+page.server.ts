@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_TABLE } from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { beginHackClubLogin } from '#lib/server/admin.ts';
 import { isAdminEntryEmail } from '#lib/signup-stats.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -25,13 +25,23 @@ function tooMany(ip: string) {
 	return recent.length > LIMIT;
 }
 
+function signupsAirtable(): { token: string; baseId: string; table: string } | null {
+	const token = privateEnv('AIRTABLE_TOKEN');
+	const baseId = privateEnv('AIRTABLE_BASE_ID');
+	const table = privateEnv('AIRTABLE_TABLE');
+	if (!token || !baseId || !table) return null;
+	return { token, baseId, table };
+}
+
 function airtable(query = '', init: RequestInit = {}) {
+	const config = signupsAirtable();
+	if (!config) throw new Error('airtable sign-ups are not configured');
 	return fetch(
-		`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE)}${query}`,
+		`https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(config.table)}${query}`,
 		{
 			...init,
 			headers: {
-				Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+				Authorization: `Bearer ${config.token}`,
 				'Content-Type': 'application/json'
 			}
 		}
@@ -50,6 +60,7 @@ async function alreadySignedUp(email: string) {
 let signups: number | null = null;
 let countedAt = 0;
 let counting: Promise<unknown> | null = null;
+let loggedCountFailure = false;
 
 async function countSignups() {
 	let total = 0;
@@ -74,8 +85,17 @@ async function countSignups() {
 
 function recount() {
 	counting ??= countSignups()
-		.then((n) => (signups = n))
-		.catch((err) => console.error("couldn't count signups:", err))
+		.then((n) => {
+			signups = n;
+			loggedCountFailure = false;
+		})
+		.catch((err) => {
+			// Keep the last good count. If we have never had one, the page hides the number.
+			if (!loggedCountFailure) {
+				loggedCountFailure = true;
+				console.error("couldn't count signups:", err);
+			}
+		})
 		.finally(() => {
 			countedAt = Date.now();
 			counting = null;
@@ -117,6 +137,10 @@ export const actions: Actions = {
 				return fail(500, { email, error: 'something broke, try again in a bit' });
 			}
 			return;
+		}
+
+		if (!signupsAirtable()) {
+			return fail(500, { email, error: 'sign-ups are not open yet' });
 		}
 
 		if (tooMany(getClientAddress())) {

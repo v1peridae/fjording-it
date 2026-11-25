@@ -1,9 +1,4 @@
-import {
-	ADMIN_EMAILS,
-	ADMIN_SESSION_SECRET,
-	HACKATIME_CLIENT_ID,
-	HACKATIME_CLIENT_SECRET
-} from '$app/env/private';
+import { privateEnv } from '#lib/server/private-env.ts';
 import { error } from '@sveltejs/kit';
 import { openSealed, randomToken, seal } from '#lib/server/admin-auth.ts';
 import { authorizeUrl, HACKATIME_REDIRECT_URI, hackatimeCredentials } from '#lib/server/hackatime.ts';
@@ -15,9 +10,10 @@ export const prerender = false;
 const STATE_COOKIE = 'hackatime_oauth';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-	if (!ADMIN_SESSION_SECRET) error(404, 'Not Found');
+	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');
+	if (!sessionSecret) error(404, 'Not Found');
 
-	const ticket = await openSealed(url.searchParams.get('ticket') ?? '', ADMIN_SESSION_SECRET);
+	const ticket = await openSealed(url.searchParams.get('ticket') ?? '', sessionSecret);
 	const email = typeof ticket?.email === 'string' ? ticket.email : '';
 	if (
 		!ticket ||
@@ -25,14 +21,14 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		typeof ticket.exp !== 'number' ||
 		ticket.exp <= Date.now() ||
 		!email ||
-		!isAdminEmail(email, ADMIN_EMAILS)
+		!isAdminEmail(email, privateEnv('ADMIN_EMAILS'))
 	) {
 		error(404, 'Not Found');
 	}
 
 	const client = hackatimeCredentials({
-		HACKATIME_CLIENT_ID,
-		HACKATIME_CLIENT_SECRET
+		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
+		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
 	});
 	if (!client) {
 		return new Response(null, {
@@ -42,7 +38,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	}
 
 	const state = randomToken();
-	cookies.set(STATE_COOKIE, await seal({ state, email, exp: Date.now() + 10 * 60 * 1000 }, ADMIN_SESSION_SECRET), {
+	cookies.set(STATE_COOKIE, await seal({ state, email, exp: Date.now() + 10 * 60 * 1000 }, sessionSecret), {
 		path: '/auth/hackatime',
 		httpOnly: true,
 		sameSite: 'lax',
