@@ -153,6 +153,37 @@
 						{/if}
 					</section>
 
+					<section class="card-cream">
+						<div class="sec-head">
+							<h2>reviewer signals</h2>
+							<span class="sub">not a decision. unknown means we could not check.</span>
+						</div>
+						{#if data.signals.length === 0}
+							<p>not checked</p>
+						{:else}
+							<div class="signal-grid">
+								{#each data.signals as signal (signal.key)}
+									<article>
+										<div class="check-top">
+											<span class="check-name">{signal.title}</span>
+											<span class={signal.state === 'look' ? 'chip chip-flag' : signal.state === 'unknown' ? 'chip chip-needs-changes' : 'chip chip-approved'}>
+												{signal.state === 'look' ? 'look' : signal.state === 'unknown' ? 'unknown' : 'clear'}
+											</span>
+										</div>
+										<ul>
+											{#each signal.lines as item, i (`${signal.key}-${i}`)}
+												<li>
+													{item.label}:
+													{#if item.href}<a href={item.href}>{item.value}</a>{:else}{item.value}{/if}
+												</li>
+											{/each}
+										</ul>
+									</article>
+								{/each}
+							</div>
+						{/if}
+					</section>
+
 					<section class="card-ink">
 						<div class="sec-head">
 							<h2>automated check evidence</h2>
@@ -305,3 +336,29 @@
 		</div>
 	</main>
 </div>
+
+<style>
+	.signal-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 14px;
+	}
+	.signal-grid article {
+		border: 2px solid var(--ink);
+		padding: 12px;
+		background: var(--paper);
+	}
+	.signal-grid ul {
+		margin: 8px 0 0;
+		padding-left: 18px;
+		font-size: 15px;
+	}
+	.signal-grid a {
+		color: inherit;
+	}
+	@media (max-width: 760px) {
+		.signal-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
