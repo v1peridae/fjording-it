@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ago, checkLabel, waitAge } from '#lib/admin-charts.ts';
 	import AdminNav from '#lib/AdminNav.svelte';
+	import Funnel from './Funnel.svelte';
 	import HomeCharts from './HomeCharts.svelte';
 	import type { PageProps } from './$types';
 
@@ -131,6 +132,15 @@
 						<span class="k-sub">{home ? (home.flagged ? 'latest check flagged' : 'none flagged') : ''}</span>
 					</div>
 				</section>
+
+				{#if data.funnel}
+					<Funnel stages={data.funnel.stages} approvedHours={data.funnel.approvedHours} />
+				{:else}
+					<section class="card-cream" style="margin-bottom:22px">
+						<div class="sec-head"><h2>participant funnel</h2></div>
+						<p>{data.dbError ?? 'database is not configured'}</p>
+					</section>
+				{/if}
 
 				{#if home}
 					<HomeCharts

@@ -7,7 +7,7 @@ import { isAdminEmail } from '#lib/signup-stats.ts';
 import { getSignupStats } from '#lib/server/airtable-signups.ts';
 import { beginHackClubLogin, currentAdminView, signOutAdmin, takeFlash } from '#lib/server/admin.ts';
 import { appDatabase, databaseConfigured } from '#lib/server/app-db.ts';
-import { listReviewers, loadAdminHome, reviewerStats } from '#lib/server/northern-store.ts';
+import { listReviewers, loadAdminHome, loadParticipantFunnel, reviewerStats } from '#lib/server/northern-store.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -44,11 +44,12 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	const from = url.searchParams.get('from') ?? '';
 	const to = url.searchParams.get('to') ?? '';
 	if (!databaseConfigured()) {
-		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, dbError: null, people: [], from, to };
+		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, dbError: null, funnel: null, people: [], from, to };
 	}
 	try {
 		const db = await appDatabase();
 		const home = await loadAdminHome(db);
+		const funnel = await loadParticipantFunnel(db);
 		const rows = await reviewerStats(db, dateParam(from), dateParam(to) ? new Date(dateParam(to)!.getTime() + 86_400_000) : null);
 		const directory = await listReviewers(db);
 		return {
@@ -57,13 +58,14 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 			handle: admin.handle,
 			signups,
 			db: home,
+			funnel,
 			dbError: null,
 			people: shapePeople(rows, directory),
 			from,
 			to
 		};
 	} catch {
-		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, dbError: "couldn't load submissions", people: [], from, to };
+		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, funnel: null, dbError: "couldn't load submissions", people: [], from, to };
 	}
 };
 

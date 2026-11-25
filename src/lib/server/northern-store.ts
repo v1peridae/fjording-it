@@ -3,6 +3,7 @@ import type { ParticipantIdentity } from '../participant-identity.ts';
 import type { Sql } from './db.ts';
 import type { HackatimeTokens } from './hackatime.ts';
 import type { CheckResult } from '../review-checks.ts';
+import { FUNNEL_SQL, funnelFromRow, funnelStages, type FunnelStage } from '../funnel.ts';
 import { type Decision, type PipelineStage, type Stage } from '../review-pipeline.ts';
 
 export const NORTHERN_SLUG = 'northern';
@@ -640,6 +641,11 @@ export async function queueFacets(db: Sql, challenge: string) {
 		})),
 		flagged: Number(flagged.rows[0]?.count ?? 0)
 	};
+}
+
+export async function loadParticipantFunnel(db: Sql): Promise<{ stages: FunnelStage[]; approvedHours: number }> {
+	const { rows } = await db.query(FUNNEL_SQL);
+	return funnelStages(funnelFromRow(rows[0] ?? {}));
 }
 
 export async function loadAdminHome(db: Sql) {
