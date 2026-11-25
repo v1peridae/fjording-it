@@ -11,7 +11,7 @@ import {
 	authorizeUrl,
 	callbackUrl,
 	openOauth,
-	openSession,
+	openSessionClaims,
 	randomToken,
 	sameToken,
 	sealOauth,
@@ -23,17 +23,53 @@ import { adminCallbackDecision } from '../signup-stats';
 const SESSION_COOKIE = 'admin_session';
 const OAUTH_COOKIE = 'admin_oauth';
 const FLASH_COOKIE = 'admin_flash';
+/** Same session, two paths: /admin keeps the stats pages, /hackathon can read it too. */
+const SESSION_PATHS = ['/admin', '/hackathon'] as const;
 
 type Flash = 'denied' | 'failed';
 
-function cookieOptions(url: URL, maxAge?: number) {
+function cookieOptions(url: URL, maxAge?: number, path = '/admin') {
 	return {
-		path: '/admin',
+		path,
 		httpOnly: true,
 		sameSite: 'lax' as const,
 		secure: url.protocol === 'https:',
 		...(maxAge === undefined ? {} : { maxAge })
 	};
+}
+
+function clearSession(cookies: Cookies, url: URL) {
+	for (const path of SESSION_PATHS) {
+		cookies.delete(SESSION_COOKIE, cookieOptions(url, undefined, path));
+	}
+}
+
+function writeSession(cookies: Cookies, url: URL, token: string) {
+	for (const path of SESSION_PATHS) {
+		cookies.set(SESSION_COOKIE, token, cookieOptions(url, SESSION_MS / 1000, path));
+	}
+}
+
+export type AdminView =
+	| { status: 'in'; email: string; handle: string | null }
+	| { status: 'denied' }
+	| { status: 'out' };
+
+export async function currentAdminView(cookies: Cookies, url: URL): Promise<AdminView> {
+	if (!ADMIN_SESSION_SECRET) return { status: 'out' };
+	const token = cookies.get(SESSION_COOKIE);
+	if (!token) return { status: 'out' };
+
+	const claims = await openSessionClaims(token, ADMIN_SESSION_SECRET);
+	if (!claims) {
+		clearSession(cookies, url);
+		return { status: 'out' };
+	}
+	if (adminCallbackDecision(claims.email, ADMIN_EMAILS) === 'deny') {
+		clearSession(cookies, url);
+		return { status: 'denied' };
+	}
+	return { status: 'in', email: claims.email, handle: claims.handle };
 }
 
 function authConfig() {
@@ -54,20 +90,7 @@ function missingAuthEnv(): string[] {
 }
 
 export async function currentAdmin(cookies: Cookies, url: URL): Promise<'in' | 'denied' | 'out'> {
-	if (!ADMIN_SESSION_SECRET) return 'out';
-	const token = cookies.get(SESSION_COOKIE);
-	if (!token) return 'out';
-
-	const email = await openSession(token, ADMIN_SESSION_SECRET);
-	if (!email) {
-		cookies.delete(SESSION_COOKIE, cookieOptions(url));
-		return 'out';
-	}
-	if (adminCallbackDecision(email, ADMIN_EMAILS) === 'deny') {
-		cookies.delete(SESSION_COOKIE, cookieOptions(url));
-		return 'denied';
-	}
-	return 'in';
+	return (await currentAdminView(cookies, url)).status;
 }
 
 export function takeFlash(cookies: Cookies, url: URL): Flash | null {
@@ -148,17 +171,13 @@ export async function finishHackClubLogin(options: { cookies: Cookies; url: URL 
 		});
 
 		if (adminCallbackDecision(email, ADMIN_EMAILS) === 'deny') {
-			options.cookies.delete(SESSION_COOKIE, cookieOptions(options.url));
+			clearSession(options.cookies, options.url);
 			console.error(`admin sign-in denied for ${email}`);
 			setFlash(options.cookies, options.url, 'denied');
 			return;
 		}
 
-		options.cookies.set(
-			SESSION_COOKIE,
-			await sealSession(email, config.sessionSecret),
-			cookieOptions(options.url, SESSION_MS / 1000)
-		);
+		writeSession(options.cookies, options.url, await sealSession(email, config.sessionSecret));
 		clearFlash(options.cookies, options.url);
 	} catch (err) {
 		fail(err instanceof Error ? err.message : 'failed');
