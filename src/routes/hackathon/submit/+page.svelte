@@ -115,7 +115,13 @@
 				<p class="sub">sign in with hack club, then connect hackatime and pick a project.</p>
 				<p class="ship"><a class="btn stampbtn inkstamp stamp" href="/hackathon/auth/login">sign in</a></p>
 			{:else}
-			<fieldset disabled={!data.allowed}>
+			{#if data.needsDemographics}
+				<p class="banner strip torn">
+					we need your birthday and address from hack club before this can ship.
+					<a href="/hackathon/auth/login?reauth=1">sign in again</a>
+				</p>
+			{/if}
+			<fieldset disabled={!data.allowed || data.needsDemographics}>
 				<div class="fields">
 					<div class="f">
 						<label for="pn">project name</label>
@@ -214,7 +220,7 @@
 					</div>
 				</div>
 				<div class="ship">
-					<button class="btn stampbtn inkstamp stamp" type="submit" disabled={!data.allowed}>ship it</button>
+					<button class="btn stampbtn inkstamp stamp" type="submit" disabled={!data.allowed || data.needsDemographics}>ship it</button>
 					<p>
 						{#if !data.allowed && data.phase === 'closed'}
 							that's a wrap

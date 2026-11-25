@@ -22,11 +22,10 @@ export type ParticipantIdentity = {
 };
 
 /**
- * Community Untrusted Hack Club Auth scopes. This app does not grant address or birthdate.
- * TODO: restore `address` and `birthdate` once the app is verified. Until then those claims
- * are absent, and age/address checks stay `unknown` instead of blocking sign-in or submission.
+ * Fjording it admin (HCA app 1515) is verified, so address and birthdate are requested again.
+ * People who signed in while those scopes were off must consent once more so we can backfill.
  */
-export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status';
+export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
 
 /** Missing birthday or address is unknown. A recorded value never blocks sign-in or submission. */
 export function ageCheck(birthday: string | null | undefined): 'unknown' | 'recorded' {
@@ -36,6 +35,36 @@ export function ageCheck(birthday: string | null | undefined): 'unknown' | 'reco
 export function addressCheck(address: ParticipantAddress | null | undefined): 'unknown' | 'recorded' {
 	if (!address) return 'unknown';
 	return Object.values(address).some(Boolean) ? 'recorded' : 'unknown';
+}
+
+/** Whole years in America/New_York. Missing or unreadable birthdays stay unknown. */
+export function ageYears(birthday: string | null | undefined, now = new Date()): number | null {
+	if (!birthday || !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) return null;
+	const today = new Intl.DateTimeFormat('en-CA', {
+		timeZone: 'America/New_York',
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(now);
+	const [year, month, day] = birthday.split('-').map(Number);
+	const [nowYear, nowMonth, nowDay] = today.split('-').map(Number);
+	let age = nowYear - year;
+	if (nowMonth < month || (nowMonth === month && nowDay < day)) age -= 1;
+	if (!Number.isFinite(age) || age < 0 || age > 120) return null;
+	return age;
+}
+
+export function demographicsComplete(input: {
+	birthday?: string | null;
+	addressLine1?: string | null;
+	city?: string | null;
+	country?: string | null;
+	address?: ParticipantAddress | null;
+}): boolean {
+	const line1 = input.addressLine1 ?? input.address?.line1;
+	const city = input.city ?? input.address?.city;
+	const country = input.country ?? input.address?.country;
+	return Boolean(input.birthday) && Boolean(line1 || city || country);
 }
 
 export function identityFromClaims(claims: Record<string, unknown>): ParticipantIdentity | null {

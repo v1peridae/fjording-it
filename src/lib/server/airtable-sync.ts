@@ -51,7 +51,10 @@ async function loadForSync(submissionId: number) {
 		        p.first_name, p.last_name, p.birthday, p.address_line1, p.address_line2, p.city, p.state, p.country, p.postal_code
 		 FROM submissions s
 		 JOIN challenges c ON c.slug = s.challenge
-		 LEFT JOIN participants p ON p.id = s.participant_id
+		 LEFT JOIN participants p ON p.id = COALESCE(
+		   s.participant_id,
+		   (SELECT id FROM participants WHERE lower(email) = lower(s.email) ORDER BY updated_at DESC LIMIT 1)
+		 )
 		 WHERE s.id = $1`,
 		[submissionId]
 	);

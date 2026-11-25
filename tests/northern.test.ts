@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { assertCreateOnly } from '../src/lib/migrations.ts';
-import { addressCheck, ageCheck, identityFromClaims, identityFromMe, PARTICIPANT_SCOPES } from '../src/lib/participant-identity.ts';
+import { addressCheck, ageCheck, ageYears, demographicsComplete, identityFromClaims, identityFromMe, PARTICIPANT_SCOPES } from '../src/lib/participant-identity.ts';
+import { authorizeUrl } from '../src/lib/server/admin-auth.ts';
 import { northernIsPublic } from '../src/lib/northern-access.ts';
 import { airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
 import {
@@ -97,7 +98,42 @@ test('airtable sync stays off the sign-ups base and maps the ysws fields', () =>
 	assert.equal(fields['Justification - Deflation Justification'], 'counted pauses');
 	assert.equal(fields['Optional - Override Hours Spent'], 4);
 	assert.equal(fields['Optional - Override Hours Spent Justification'], 'counted pauses');
+	assert.equal(fields['Birthday'], undefined);
+	assert.equal(fields['Address (Line 1)'], undefined);
 	assert.equal(fields['Approved Hours'], undefined);
+	const placed = airtableRecordFields({
+		email: 'ada@hackclub.com',
+		repoUrl: 'https://github.com/hackclub/lantern',
+		demoUrl: 'https://lantern.example',
+		description: 'a lantern',
+		githubUsername: null,
+		hackatimeUserId: null,
+		hackatimeProject: 'lantern',
+		hackatimeSeconds: 6 * 3600,
+		windowLabel: null,
+		lapseLinks: [],
+		technicalFeatures: '',
+		deflationJustification: '',
+		alternateTracking: '',
+		additionalJustification: '',
+		note: '',
+		overrideHours: null,
+		birthday: '2008-01-02',
+		addressLine1: '1 Main',
+		addressLine2: 'Apt 2',
+		city: 'Shelburne',
+		state: 'VT',
+		country: 'US',
+		postalCode: '05482'
+	});
+	assert.equal(placed['Birthday'], '2008-01-02');
+	assert.equal(placed['Address (Line 1)'], '1 Main');
+	assert.equal(placed['Address (Line 2)'], 'Apt 2');
+	assert.equal(placed['City'], 'Shelburne');
+	assert.equal(placed['State / Province'], 'VT');
+	assert.equal(placed['Country'], 'US');
+	assert.equal(placed['ZIP / Postal Code'], '05482');
+	assert.equal(placed['Age'], undefined);
 	assert.equal(fields['Automation - Submit to Unified YSWS'], undefined);
 	assert.equal(parseGithubRepo('https://github.com/hackclub/hackatime.git')?.repo, 'hackatime');
 });
@@ -144,22 +180,42 @@ test('the migration creates tables and does not remove them', () => {
 	assert.equal(addressCheck(withBirthday.address), 'recorded');
 });
 
-test('participant sign-in omits address and birthday and treats them as unknown', () => {
-	assert.equal(PARTICIPANT_SCOPES, 'openid profile email name slack_id verification_status');
-	assert.equal(/\baddress\b/.test(PARTICIPANT_SCOPES), false);
-	assert.equal(/\bbirthdate\b/.test(PARTICIPANT_SCOPES), false);
+test('participant sign-in asks for address and birthday again and computes age', () => {
+	assert.equal(PARTICIPANT_SCOPES, 'openid profile email name slack_id verification_status address birthdate');
 	const bare = identityFromClaims({ sub: 'ident!1', email: 'a@hackclub.com', email_verified: true });
 	assert.ok(bare);
 	assert.equal(ageCheck(bare?.birthday), 'unknown');
 	assert.equal(addressCheck(bare?.address), 'unknown');
+	assert.equal(ageYears(bare?.birthday), null);
+	assert.equal(demographicsComplete({ birthday: bare?.birthday, address: bare?.address }), false);
+	const full = identityFromClaims({
+		sub: 'ident!1',
+		email: 'a@hackclub.com',
+		birthdate: '2008-01-02',
+		address: { street_address: '1 Main', locality: 'Shelburne', region: 'VT', postal_code: '05482', country: 'US' }
+	});
+	assert.equal(full?.birthday, '2008-01-02');
+	assert.equal(ageYears(full?.birthday, new Date('2026-11-25T17:00:00Z')), 18);
+	assert.equal(ageYears('2008-12-01', new Date('2026-11-25T17:00:00Z')), 17);
+	assert.equal(demographicsComplete({ birthday: full?.birthday, address: full?.address }), true);
+	assert.equal(demographicsComplete({ birthday: '2008-01-02', addressLine1: null }), false);
+	const consent = authorizeUrl({
+		clientId: '1515',
+		redirectUri: 'https://fjording.hackclub.com/hackathon/auth/callback',
+		state: 's',
+		nonce: 'n',
+		scope: PARTICIPANT_SCOPES,
+		prompt: 'consent'
+	});
+	const params = new URL(consent).searchParams;
+	assert.equal(params.get('scope'), PARTICIPANT_SCOPES);
+	assert.equal(params.get('prompt'), 'consent');
 	const messy = identityFromMe(
 		{ identity: { addresses: 'not-a-list', birthday: { year: 2008 }, verification_status: 'pending' } },
 		bare!
 	);
 	assert.equal(messy.verificationStatus, 'pending');
 	assert.equal(messy.birthday, null);
-	assert.equal(ageCheck(messy.birthday), 'unknown');
-	assert.equal(addressCheck(messy.address), 'unknown');
 	assert.equal(identityFromMe(null, bare!), bare);
 });
 

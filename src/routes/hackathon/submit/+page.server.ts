@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { privateEnv } from '#lib/server/private-env.ts';
 import { seal } from '#lib/server/admin-auth.ts';
+import { demographicsComplete } from '#lib/participant-identity.ts';
 import { northernPageAllowed, currentParticipant } from '#lib/server/participant.ts';
 import { appDatabase, DatabaseUnconfigured } from '#lib/server/app-db.ts';
 import { databaseConfigured } from '#lib/server/app-db.ts';
@@ -83,6 +84,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		phase,
 		allowed,
 		relaxHours: tester,
+		needsDemographics: participant ? !demographicsComplete(participant) : false,
 		preview: phase === 'early',
 		configured,
 		connected: linked && !projectsFailed,
@@ -170,6 +172,7 @@ export const actions: Actions = {
 		const picked = String(data.get('hackatime') ?? '');
 		const values = { project, description, repo, demo, hackatime: picked };
 		if (!participant) return fail(401, { ...values, error: 'sign in with hack club first' });
+		if (!demographicsComplete(participant)) redirect(303, '/hackathon/auth/login?reauth=1');
 
 		const phase = submitPhase(new Date());
 		const tester = presubmitTester(participant.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));

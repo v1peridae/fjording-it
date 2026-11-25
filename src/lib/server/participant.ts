@@ -1,6 +1,7 @@
 import { error, redirect, type Cookies } from '@sveltejs/kit';
 import { privateEnv } from '#lib/server/private-env.ts';
 import {
+	demographicsComplete,
 	identityFromClaims,
 	identityFromMe,
 	PARTICIPANT_SCOPES,
@@ -87,6 +88,9 @@ export async function beginParticipantLogin(options: { cookies: Cookies; url: UR
 		console.error('participant sign-in missing hack club auth env');
 		error(500, 'sign-in is not configured');
 	}
+	const existing = await currentParticipant(options.cookies, options.url);
+	const reauth = options.url.searchParams.get('reauth') === '1';
+	const needsConsent = reauth || (existing != null && !demographicsComplete(existing));
 	const attempt = { state: randomToken(), nonce: randomToken(), exp: Date.now() + OAUTH_MS };
 	writeCookie(
 		options.cookies,
@@ -102,7 +106,8 @@ export async function beginParticipantLogin(options: { cookies: Cookies; url: UR
 			redirectUri: participantCallbackUrl(options.url.origin),
 			state: attempt.state,
 			nonce: attempt.nonce,
-			scope: PARTICIPANT_SCOPES
+			scope: PARTICIPANT_SCOPES,
+			...(needsConsent ? { prompt: 'consent' } : {})
 		}),
 		{ external: ['https://auth.hackclub.com'] }
 	);

@@ -113,7 +113,7 @@
 										<br />{data.participant.email}
 										<br />hack club {data.participant.hackClubId}
 										<br />verification {data.participant.verificationStatus ?? 'not on the sign-in'}
-										<br />age {data.participant.age}
+										<br />age {data.participant.age ?? 'unknown'}
 										<br />address {data.participant.address}
 										{#if data.participant.slackId}<br />slack {data.participant.slackId}{/if}
 									{:else}
