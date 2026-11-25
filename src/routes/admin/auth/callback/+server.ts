@@ -9,6 +9,6 @@ export const GET: RequestHandler = async ({ cookies, url, setHeaders }) => {
 		'cache-control': 'no-store',
 		'referrer-policy': 'no-referrer'
 	});
-	await finishHackClubLogin({ cookies, url });
-	redirect(303, '/admin/stats');
+	const result = await finishHackClubLogin({ cookies, url });
+	redirect(303, result === 'reviewer' ? '/reviews' : '/admin');
 };

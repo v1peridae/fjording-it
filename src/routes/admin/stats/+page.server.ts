@@ -1,5 +1,5 @@
-import { fail } from '@sveltejs/kit';
-import { beginHackClubLogin, clearFlash, currentAdmin, takeFlash } from '#lib/server/admin.ts';
+import { error, fail } from '@sveltejs/kit';
+import { beginHackClubLogin, clearFlash, currentAdminView } from '#lib/server/admin.ts';
 import { getSignupStats } from '#lib/server/airtable-signups.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -8,31 +8,18 @@ const EMAIL = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 export const prerender = false;
 
 export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
-	setHeaders({ 'cache-control': 'private, no-store' });
+	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 
-	const admin = await currentAdmin(cookies, url);
-	if (admin === 'in') {
-		clearFlash(cookies, url);
-		try {
-			const report = await getSignupStats();
-			return { view: 'stats' as const, report };
-		} catch (err) {
-			console.error('signup stats failed:', err instanceof Error ? err.message : 'error');
-			return { view: 'error' as const };
-		}
+	const admin = await currentAdminView(cookies, url);
+	if (admin.status !== 'in') error(404, 'Not Found');
+	clearFlash(cookies, url);
+	try {
+		const report = await getSignupStats();
+		return { view: 'stats' as const, report, email: admin.email, handle: admin.handle };
+	} catch (err) {
+		console.error('signup stats failed:', err instanceof Error ? err.message : 'error');
+		return { view: 'error' as const, email: admin.email, handle: admin.handle };
 	}
-
-	if (admin === 'denied') {
-		clearFlash(cookies, url);
-		return { view: 'denied' as const };
-	}
-
-	const flash = takeFlash(cookies, url);
-	if (flash === 'denied') return { view: 'denied' as const };
-	return {
-		view: 'signin' as const,
-		error: flash === 'failed' ? "sign-in didn't work, try again" : undefined
-	};
 };
 
 export const actions: Actions = {

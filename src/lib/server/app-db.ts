@@ -1,19 +1,34 @@
-import { DATABASE_PATH } from '$app/env/private';
-import { dirname, join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
-import { databasePath, openDatabase } from './db.ts';
+import { DATABASE_URL } from '$app/env/private';
+import { DatabaseUnconfigured, databaseUrl, getPool, migrate, type Sql } from './db.ts';
 
-let db: DatabaseSync | null = null;
+export { DatabaseUnconfigured };
 
-export function appDatabase(): DatabaseSync {
-	if (!db) db = openDatabase(databasePath(DATABASE_PATH));
-	return db;
+export async function withTransaction<T>(fn: (db: Sql) => Promise<T>): Promise<T> {
+	const url = databaseUrl(DATABASE_URL);
+	if (!url) throw new DatabaseUnconfigured();
+	const client = await getPool(url).connect();
+	try {
+		await client.query('BEGIN');
+		const result = await fn(client);
+		await client.query('COMMIT');
+		return result;
+	} catch (err) {
+		await client.query('ROLLBACK');
+		throw err;
+	} finally {
+		client.release();
+	}
 }
 
-export function appDatabaseFile(): string {
-	return databasePath(DATABASE_PATH);
+let ready: Promise<Sql> | null = null;
+
+export function appDatabase(): Promise<Sql> {
+	const url = databaseUrl(DATABASE_URL);
+	if (!url) return Promise.reject(new DatabaseUnconfigured());
+	ready ??= migrate(getPool(url)).then(() => getPool(url));
+	return ready;
 }
 
-export function screenshotDirectory(): string {
-	return join(dirname(appDatabaseFile()), 'screenshots');
+export function databaseConfigured(): boolean {
+	return databaseUrl(DATABASE_URL) !== null;
 }

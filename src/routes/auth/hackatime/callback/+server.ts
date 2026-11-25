@@ -63,8 +63,8 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 			clientSecret: client.secret
 		});
 		const profile = await fetchHackatimeProfile(tokens.accessToken);
-		saveHackatimeConnection(
-			appDatabase(),
+		await saveHackatimeConnection(
+			await appDatabase(),
 			email,
 			tokens,
 			{ id: profile?.id ?? null, githubUsername: profile?.githubUsername ?? null }

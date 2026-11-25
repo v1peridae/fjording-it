@@ -1,5 +1,4 @@
 import { error } from '@sveltejs/kit';
-import { hackathonAllowed } from '#lib/hackathon.ts';
 import { currentAdminView } from '#lib/server/admin.ts';
 import type { PageServerLoad } from './$types';
 
@@ -13,10 +12,11 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 
 	// Same Hack Club Auth session as /admin. Everyone else gets a not-found.
 	const admin = await currentAdminView(cookies, url);
-	if (!hackathonAllowed(admin.status)) error(404, 'Not Found');
+	if (admin.status !== 'in') error(404, 'Not Found');
 
 	return {
-		handle: admin.status === 'in' ? admin.handle : null,
+		handle: admin.handle,
+		email: admin.email,
 		now: Date.now()
 	};
 };

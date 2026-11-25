@@ -2,7 +2,8 @@ import { ADMIN_SESSION_SECRET, HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET } fr
 import { error, fail, redirect } from '@sveltejs/kit';
 import { seal } from '#lib/server/admin-auth.ts';
 import { currentAdminView } from '#lib/server/admin.ts';
-import { appDatabase, screenshotDirectory } from '#lib/server/app-db.ts';
+import { appDatabase, DatabaseUnconfigured } from '#lib/server/app-db.ts';
+import { databaseConfigured } from '#lib/server/app-db.ts';
 import {
 	fetchHackatimeProjects,
 	formatHours,
@@ -12,10 +13,12 @@ import {
 } from '#lib/server/hackatime.ts';
 import {
 	insertSubmission,
+	NORTHERN_SLUG,
 	readHackatimeConnection,
-	saveScreenshot,
 	updateHackatimeTokens
 } from '#lib/server/northern-store.ts';
+import { runSubmissionChecks } from '#lib/server/run-checks.ts';
+import { sniffImage } from '#lib/northern.ts';
 import { canSubmit, cleanDescription, cleanProjectName, eligibleHours, httpUrl, submitPhase } from '#lib/northern.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -45,12 +48,16 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	let projects: { name: string; seconds: number; hours: string; eligible: boolean }[] = [];
 	let projectsFailed = false;
 
-	if (configured) {
-		const live = await liveProjects(admin.email);
-		github = live.github;
-		linked = live.linked;
-		projects = live.projects;
-		projectsFailed = live.failed;
+	if (configured && databaseConfigured()) {
+		try {
+			const live = await liveProjects(admin.email);
+			github = live.github;
+			linked = live.linked;
+			projects = live.projects;
+			projectsFailed = live.failed;
+		} catch {
+			projectsFailed = true;
+		}
 	}
 
 	const ticket =
@@ -93,8 +100,8 @@ async function liveProjects(email: string): Promise<{
 	const client = hackatimeCredentials({ HACKATIME_CLIENT_ID, HACKATIME_CLIENT_SECRET });
 	if (!client) return empty;
 
-	const db = appDatabase();
-	let connection = readHackatimeConnection(db, email);
+	const db = await appDatabase();
+	let connection = await readHackatimeConnection(db, email);
 	if (!connection) return empty;
 
 	const remembered = connection.githubUsername;
@@ -108,8 +115,8 @@ async function liveProjects(email: string): Promise<{
 				clientId: client.id,
 				clientSecret: client.secret
 			});
-			updateHackatimeTokens(db, email, tokens);
-			connection = readHackatimeConnection(db, email);
+			await updateHackatimeTokens(db, email, tokens);
+			connection = await readHackatimeConnection(db, email);
 		} catch {
 			return { github: remembered, linked: true, projects: [], failed: true };
 		}
@@ -172,19 +179,28 @@ export const actions: Actions = {
 		}
 		if (file.size > MAX_SCREENSHOT) return fail(400, { ...values, error: 'that screenshot is too big' });
 		const bytes = new Uint8Array(await file.arrayBuffer());
-		const screenshotName = await saveScreenshot(screenshotDirectory(), bytes);
-		if (!screenshotName) return fail(400, { ...values, error: 'add a png or jpg screenshot' });
+		const kind = sniffImage(bytes);
+		if (!kind) return fail(400, { ...values, error: 'add a png or jpg screenshot' });
 
-		insertSubmission(appDatabase(), {
-			email: admin.email,
-			projectName: name,
-			description: story,
-			repoUrl,
-			demoUrl,
-			screenshotName,
-			hackatimeProject: match.name,
-			hackatimeSeconds: match.seconds
-		});
+		let submissionId: number;
+		try {
+			submissionId = await insertSubmission(await appDatabase(), {
+				challenge: NORTHERN_SLUG,
+				email: admin.email,
+				projectName: name,
+				description: story,
+				repoUrl,
+				demoUrl,
+				screenshot: bytes,
+				screenshotType: kind === 'png' ? 'image/png' : kind === 'jpg' ? 'image/jpeg' : 'image/webp',
+				hackatimeProject: match.name,
+				hackatimeSeconds: match.seconds
+			});
+		} catch (err) {
+			if (err instanceof DatabaseUnconfigured) return fail(500, { ...values, error: 'database is not configured' });
+			throw err;
+		}
+		await runSubmissionChecks(submissionId).catch(() => undefined);
 
 		cookies.set(SHIPPED, '1', {
 			path: '/hackathon',

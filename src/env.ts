@@ -32,8 +32,20 @@ export const variables = defineEnvVars({
 		description: 'Hackatime OAuth client secret. Server-side only.',
 		schema: optional
 	},
-	DATABASE_PATH: {
-		description: 'SQLite file for Northern Challenge submissions. Defaults to data/fjording.sqlite.',
+	DATABASE_URL: {
+		description: 'Postgres connection string. Server-side only. Required for submissions and reviews.',
+		schema: optional
+	},
+	NORTHERN_AIRTABLE_BASE_ID: {
+		description: 'Airtable base for HQ-confirmed submissions. Not the sign-ups base and not the Unified base.',
+		schema: optional
+	},
+	NORTHERN_AIRTABLE_TABLE: {
+		description: 'Existing YSWS Project Submission table in NORTHERN_AIRTABLE_BASE_ID. This app does not create tables.',
+		schema: optional
+	},
+	GITHUB_TOKEN: {
+		description: 'Optional token for review checks against the public GitHub API.',
 		schema: optional
 	}
 });
