@@ -49,6 +49,11 @@ export const variables = defineEnvVars({
 		description: 'Set to true to open /hackathon and submit to everyone. Default false keeps them admin-only. Admins can still test the participant flow.',
 		schema: optional
 	},
+	PRESUBMIT_TESTER_EMAILS: {
+		description:
+			'Comma-separated participant emails who may submit before kickoff and under the 5 hour minimum. Case-insensitive. Empty by default. Does not open the form for anyone else.',
+		schema: optional
+	},
 	NORTHERN_AIRTABLE_TOKEN: {
 		description: 'Token for the Fjording YSWS base. Falls back to AIRTABLE_TOKEN when unset. Server-side only.',
 		schema: optional

@@ -16,6 +16,24 @@ export function canSubmit(phase: SubmitPhase, isAdmin: boolean): boolean {
 	return phase === 'early' && isAdmin;
 }
 
+/** Comma-separated, case-insensitive. Empty or unset means nobody. */
+export function presubmitTester(email: string | null | undefined, allowlist: string | undefined): boolean {
+	const needle = email?.trim().toLowerCase();
+	if (!needle) return false;
+	const raw = allowlist?.trim();
+	if (!raw) return false;
+	return raw
+		.split(',')
+		.map((item) => item.trim().toLowerCase())
+		.filter(Boolean)
+		.includes(needle);
+}
+
+/** Testers may ship a short Hackatime project. Everyone else still needs 5 hours. */
+export function hoursEligible(totalSeconds: number, bypassMinimum: boolean): boolean {
+	return bypassMinimum || eligibleHours(totalSeconds);
+}
+
 export function cleanProjectName(value: string): string | null {
 	const name = value.trim().replace(/\s+/g, ' ');
 	if (name.length < 1 || name.length > 80) return null;
