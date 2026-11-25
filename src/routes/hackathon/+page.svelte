@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-	<title>fjording it: the hackathon</title>
+	<title>fjording it: The Northern Challenge</title>
 	<meta name="description" content="online, fri nov 27 to sun dec 6." />
 	<meta name="robots" content="noindex, nofollow" />
 	<link
@@ -80,7 +80,7 @@
 				<img class="g3" src="/hackathon/goose-3.png" alt="" />
 			</div>
 			<div class="mark"><h1>fjording it</h1><span class="hc">hack club</span></div>
-			<div><span class="subline strip torn">the hackathon</span></div>
+			<div><span class="subline strip torn">The Northern Challenge</span></div>
 			<div class="row">
 				<div class="when strip torn">
 					<span class="k">online, 10 days</span>
