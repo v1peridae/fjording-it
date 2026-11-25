@@ -1,0 +1,119 @@
+export type ParticipantAddress = {
+	line1: string | null;
+	line2: string | null;
+	city: string | null;
+	state: string | null;
+	postalCode: string | null;
+	country: string | null;
+};
+
+export type ParticipantIdentity = {
+	hackClubId: string;
+	email: string;
+	emailVerified: boolean;
+	name: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	slackId: string | null;
+	verificationStatus: string | null;
+	yswsEligible: boolean | null;
+	birthday: string | null;
+	address: ParticipantAddress | null;
+};
+
+/** Community Hack Club Auth scopes. Address and birthday are stored only when the token actually includes them. */
+export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
+
+export function identityFromClaims(claims: Record<string, unknown>): ParticipantIdentity | null {
+	const hackClubId = text(claims.sub);
+	const email = text(claims.email)?.toLowerCase() ?? text(claims.primary_email)?.toLowerCase() ?? null;
+	if (!hackClubId || !email) return null;
+	const firstName = text(claims.given_name) ?? text(claims.first_name);
+	const lastName = text(claims.family_name) ?? text(claims.last_name);
+	const name = text(claims.name) ?? joinName(firstName, lastName);
+	return {
+		hackClubId,
+		email,
+		emailVerified: claims.email_verified === true,
+		name,
+		firstName,
+		lastName,
+		slackId: text(claims.slack_id),
+		verificationStatus: text(claims.verification_status),
+		yswsEligible: typeof claims.ysws_eligible === 'boolean' ? claims.ysws_eligible : null,
+		birthday: dateOnly(claims.birthdate) ?? dateOnly(claims.birthday),
+		address: addressFrom(claims.address)
+	};
+}
+
+/** Merge /api/v1/me, which uses different names from the OIDC claims. */
+export function identityFromMe(body: unknown, fallback: ParticipantIdentity): ParticipantIdentity {
+	if (!body || typeof body !== 'object') return fallback;
+	const identity = (body as { identity?: unknown }).identity;
+	if (!identity || typeof identity !== 'object') return fallback;
+	const row = identity as Record<string, unknown>;
+	const addresses = Array.isArray(row.addresses) ? row.addresses : [];
+	const primary = addresses.find((item) => item && typeof item === 'object' && (item as { primary?: unknown }).primary === true) ?? addresses[0];
+	const address = addressRecord(primary);
+	return {
+		...fallback,
+		hackClubId: text(row.id) ?? fallback.hackClubId,
+		email: text(row.primary_email)?.toLowerCase() ?? fallback.email,
+		firstName: text(row.first_name) ?? fallback.firstName,
+		lastName: text(row.last_name) ?? fallback.lastName,
+		name: joinName(text(row.first_name), text(row.last_name)) ?? fallback.name,
+		slackId: text(row.slack_id) ?? fallback.slackId,
+		verificationStatus: text(row.verification_status) ?? fallback.verificationStatus,
+		yswsEligible: typeof row.ysws_eligible === 'boolean' ? row.ysws_eligible : fallback.yswsEligible,
+		birthday: dateOnly(row.birthday) ?? fallback.birthday,
+		address: address ?? fallback.address
+	};
+}
+
+function addressFrom(value: unknown): ParticipantAddress | null {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const row = value as Record<string, unknown>;
+	const street = text(row.street_address);
+	const [line1, line2] = street ? street.split('\n') : [null, null];
+	const address = {
+		line1: line1 || null,
+		line2: line2 || null,
+		city: text(row.locality),
+		state: text(row.region),
+		postalCode: text(row.postal_code),
+		country: text(row.country)
+	};
+	return Object.values(address).some(Boolean) ? address : null;
+}
+
+function addressRecord(value: unknown): ParticipantAddress | null {
+	if (!value || typeof value !== 'object') return null;
+	const row = value as Record<string, unknown>;
+	const address = {
+		line1: text(row.line_1),
+		line2: text(row.line_2),
+		city: text(row.city),
+		state: text(row.state),
+		postalCode: text(row.postal_code),
+		country: text(row.country)
+	};
+	return Object.values(address).some(Boolean) ? address : null;
+}
+
+function joinName(first: string | null, last: string | null): string | null {
+	const name = [first, last].filter(Boolean).join(' ');
+	return name || null;
+}
+
+function text(value: unknown): string | null {
+	if (typeof value !== 'string') return null;
+	const trimmed = value.trim();
+	return trimmed || null;
+}
+
+function dateOnly(value: unknown): string | null {
+	const raw = text(value);
+	if (!raw) return null;
+	const match = /^(\d{4}-\d{2}-\d{2})/.exec(raw);
+	return match ? match[1] : null;
+}

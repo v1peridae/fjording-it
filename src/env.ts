@@ -45,6 +45,14 @@ export const variables = defineEnvVars({
 		description: 'Postgres connection string. Server-side only. Required for submissions and reviews.',
 		schema: optional
 	},
+	NORTHERN_PUBLIC: {
+		description: 'Set to true to open /hackathon and submit to everyone. Default false keeps them admin-only. Admins can still test the participant flow.',
+		schema: optional
+	},
+	NORTHERN_AIRTABLE_TOKEN: {
+		description: 'Token for the Fjording YSWS base. Falls back to AIRTABLE_TOKEN when unset. Server-side only.',
+		schema: optional
+	},
 	NORTHERN_AIRTABLE_BASE_ID: {
 		description: 'Airtable base for HQ-confirmed submissions. Not the sign-ups base and not the Unified base.',
 		schema: optional

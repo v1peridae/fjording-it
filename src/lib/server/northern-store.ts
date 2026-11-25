@@ -1,4 +1,5 @@
 import { buildAdminHome } from '../admin-charts.ts';
+import type { ParticipantIdentity } from '../participant-identity.ts';
 import type { Sql } from './db.ts';
 import type { HackatimeTokens } from './hackatime.ts';
 import type { CheckResult } from '../review-checks.ts';
@@ -67,6 +68,121 @@ export async function readHackatimeConnection(db: Sql, email: string): Promise<H
 	};
 }
 
+export type ParticipantRow = {
+	id: number;
+	hackClubId: string;
+	email: string;
+	emailVerified: boolean;
+	name: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	slackId: string | null;
+	verificationStatus: string | null;
+	yswsEligible: boolean | null;
+	birthday: string | null;
+	addressLine1: string | null;
+	addressLine2: string | null;
+	city: string | null;
+	state: string | null;
+	country: string | null;
+	postalCode: string | null;
+};
+
+export async function upsertParticipant(db: Sql, identity: ParticipantIdentity): Promise<ParticipantRow> {
+	const { rows } = await db.query(
+		`INSERT INTO participants
+			(hack_club_id, email, email_verified, name, first_name, last_name, slack_id, verification_status,
+			 ysws_eligible, birthday, address_line1, address_line2, city, state, country, postal_code)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		 ON CONFLICT (hack_club_id) DO UPDATE SET
+			email = excluded.email,
+			email_verified = excluded.email_verified,
+			name = excluded.name,
+			first_name = excluded.first_name,
+			last_name = excluded.last_name,
+			slack_id = excluded.slack_id,
+			verification_status = excluded.verification_status,
+			ysws_eligible = excluded.ysws_eligible,
+			birthday = excluded.birthday,
+			address_line1 = excluded.address_line1,
+			address_line2 = excluded.address_line2,
+			city = excluded.city,
+			state = excluded.state,
+			country = excluded.country,
+			postal_code = excluded.postal_code,
+			updated_at = now()
+		 RETURNING *`,
+		[
+			identity.hackClubId,
+			identity.email,
+			identity.emailVerified,
+			identity.name,
+			identity.firstName,
+			identity.lastName,
+			identity.slackId,
+			identity.verificationStatus,
+			identity.yswsEligible,
+			identity.birthday,
+			identity.address?.line1 ?? null,
+			identity.address?.line2 ?? null,
+			identity.address?.city ?? null,
+			identity.address?.state ?? null,
+			identity.address?.country ?? null,
+			identity.address?.postalCode ?? null
+		]
+	);
+	return mapParticipant(rows[0]);
+}
+
+export async function participantByHackClubId(db: Sql, hackClubId: string): Promise<ParticipantRow | null> {
+	const { rows } = await db.query(`SELECT * FROM participants WHERE hack_club_id = $1`, [hackClubId]);
+	return rows[0] ? mapParticipant(rows[0]) : null;
+}
+
+export async function participantForSubmission(db: Sql, submissionId: number): Promise<ParticipantRow | null> {
+	const { rows } = await db.query(
+		`SELECT p.* FROM participants p JOIN submissions s ON s.participant_id = p.id WHERE s.id = $1`,
+		[submissionId]
+	);
+	return rows[0] ? mapParticipant(rows[0]) : null;
+}
+
+function mapParticipant(row: Record<string, unknown>): ParticipantRow {
+	const date = row.birthday == null ? null : String(row.birthday).slice(0, 10);
+	return {
+		id: Number(row.id),
+		hackClubId: String(row.hack_club_id),
+		email: String(row.email),
+		emailVerified: row.email_verified === true,
+		name: textOrNull(row.name),
+		firstName: textOrNull(row.first_name),
+		lastName: textOrNull(row.last_name),
+		slackId: textOrNull(row.slack_id),
+		verificationStatus: textOrNull(row.verification_status),
+		yswsEligible: typeof row.ysws_eligible === 'boolean' ? row.ysws_eligible : null,
+		birthday: date,
+		addressLine1: textOrNull(row.address_line1),
+		addressLine2: textOrNull(row.address_line2),
+		city: textOrNull(row.city),
+		state: textOrNull(row.state),
+		country: textOrNull(row.country),
+		postalCode: textOrNull(row.postal_code)
+	};
+}
+
+function textOrNull(value: unknown): string | null {
+	return typeof value === 'string' && value ? value : null;
+}
+
+export async function rememberAirtableRecord(db: Sql, submissionId: number, recordId: string): Promise<void> {
+	await db.query(`UPDATE submissions SET airtable_record_id = $2 WHERE id = $1`, [submissionId, recordId]);
+	await db.query(
+		`UPDATE airtable_outbox SET airtable_record_id = $2, updated_at = now()
+		 WHERE id = (SELECT id FROM airtable_outbox WHERE submission_id = $1 ORDER BY id DESC LIMIT 1)`,
+		[submissionId, recordId]
+	);
+}
+
 export async function insertSubmission(
 	db: Sql,
 	row: {
@@ -80,12 +196,15 @@ export async function insertSubmission(
 		screenshotType: string | null;
 		hackatimeProject: string;
 		hackatimeSeconds: number;
+		participantId?: number | null;
+		hackatimeUserId?: string | null;
 	}
 ): Promise<number> {
 	const { rows } = await db.query(
 		`INSERT INTO submissions
-			(challenge, email, project_name, description, repo_url, demo_url, screenshot, screenshot_type, hackatime_project, hackatime_seconds)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+			(challenge, email, project_name, description, repo_url, demo_url, screenshot, screenshot_type,
+			 hackatime_project, hackatime_seconds, participant_id, hackatime_user_id)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 		 RETURNING id`,
 		[
 			row.challenge,
@@ -97,10 +216,22 @@ export async function insertSubmission(
 			row.screenshot,
 			row.screenshotType,
 			row.hackatimeProject,
-			row.hackatimeSeconds
+			row.hackatimeSeconds,
+			row.participantId ?? null,
+			row.hackatimeUserId ?? null
 		]
 	);
 	return Number(rows[0]?.id);
+}
+
+export class HackatimeProjectTaken extends Error {
+	constructor() {
+		super('that hackatime project was already submitted');
+	}
+}
+
+export function isUniqueViolation(err: unknown): boolean {
+	return typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === '23505';
 }
 
 export type QueueFilters = {

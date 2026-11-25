@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { assertCreateOnly } from '../src/lib/migrations.ts';
+import { identityFromClaims, identityFromMe } from '../src/lib/participant-identity.ts';
+import { northernIsPublic } from '../src/lib/northern-access.ts';
 import { airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
 import {
 	copiedProjectCheck,
@@ -83,15 +85,19 @@ test('airtable sync stays off the sign-ups base and maps the ysws fields', () =>
 		alternateTracking: '',
 		additionalJustification: 'notes',
 		note: 'looks good',
-		overrideHours: 4
+		overrideHours: 4,
+		windowLabel: '2026-11-27 to 2026-12-06',
+		firstName: 'Ada'
 	});
+	assert.equal(fields['First Name'], 'Ada');
 	assert.equal(fields['Code URL'], 'https://github.com/hackclub/lantern');
 	assert.equal(fields['Justification - Lapse Links, comma-separated'], 'https://lapse.example/1');
 	assert.equal(fields['Justification - Specific Technical Features'], 'pwm');
 	assert.equal(fields['Justification - Deflation Justification'], 'counted pauses');
-	assert.equal(fields['Justification - Alternate Tracking Method'], '');
 	assert.equal(fields['Optional - Override Hours Spent'], 4);
-	assert.equal(fields['Approved Hours'], 4);
+	assert.equal(fields['Optional - Override Hours Spent Justification'], 'counted pauses');
+	assert.equal(fields['Approved Hours'], undefined);
+	assert.equal(fields['Automation - Submit to Unified YSWS'], undefined);
 	assert.equal(parseGithubRepo('https://github.com/hackclub/hackatime.git')?.repo, 'hackatime');
 });
 
@@ -110,4 +116,27 @@ test('the migration creates tables and does not remove them', () => {
 	};
 	assert.equal(pkg.scripts.start, 'node build');
 	assert.match(pkg.engines.node, />=22\.17/);
+	const participants = readFileSync(new URL('../migrations/002_participants.sql', import.meta.url), 'utf8');
+	assert.match(participants, /CREATE TABLE IF NOT EXISTS participants/);
+	assert.match(participants, /submissions_one_hackatime_project/);
+	assertCreateOnly('002_participants.sql', participants);
+	assert.equal(northernIsPublic('true'), true);
+	assert.equal(northernIsPublic('false'), false);
+	assert.equal(northernIsPublic(undefined), false);
+	const identity = identityFromClaims({
+		sub: 'ident!abc',
+		email: 'Ada@hackclub.com',
+		email_verified: true,
+		given_name: 'Ada',
+		family_name: 'Lovelace',
+		slack_id: 'U123',
+		verification_status: 'verified',
+		address: { street_address: '1 Main\nApt 2', locality: 'Shelburne', region: 'VT', postal_code: '05482', country: 'US' }
+	});
+	assert.equal(identity?.email, 'ada@hackclub.com');
+	assert.equal(identity?.slackId, 'U123');
+	assert.equal(identity?.address?.line2, 'Apt 2');
+	assert.equal(identity?.birthday, null);
+	const withBirthday = identityFromMe({ identity: { birthday: '2008-01-02', addresses: [] } }, identity!);
+	assert.equal(withBirthday.birthday, '2008-01-02');
 });

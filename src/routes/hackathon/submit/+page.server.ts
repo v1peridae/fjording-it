@@ -1,7 +1,7 @@
+import { fail, redirect } from '@sveltejs/kit';
 import { privateEnv } from '#lib/server/private-env.ts';
-import { error, fail, redirect } from '@sveltejs/kit';
 import { seal } from '#lib/server/admin-auth.ts';
-import { currentAdminView } from '#lib/server/admin.ts';
+import { northernPageAllowed, currentParticipant } from '#lib/server/participant.ts';
 import { appDatabase, DatabaseUnconfigured } from '#lib/server/app-db.ts';
 import { databaseConfigured } from '#lib/server/app-db.ts';
 import {
@@ -12,7 +12,9 @@ import {
 	type HackatimeProject
 } from '#lib/server/hackatime.ts';
 import {
+	HackatimeProjectTaken,
 	insertSubmission,
+	isUniqueViolation,
 	NORTHERN_SLUG,
 	readHackatimeConnection,
 	updateHackatimeTokens
@@ -30,8 +32,8 @@ const MAX_SCREENSHOT = 5_000_000;
 export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 
-	const admin = await currentAdminView(cookies, url);
-	if (admin.status !== 'in') error(404, 'Not Found');
+	const access = await northernPageAllowed(cookies, url);
+	const participant = await currentParticipant(cookies, url);
 
 	const shipped = cookies.get(SHIPPED) === '1';
 	if (shipped) {
@@ -43,17 +45,17 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
 	}));
 	const phase = submitPhase(new Date());
-	const allowed = canSubmit(phase, true);
-	const notice = hackatimeNotice(url.searchParams.get('hackatime'), configured);
+	const allowed = canSubmit(phase, access.admin);
+	const notice = signinNotice(url.searchParams.get('signin')) ?? hackatimeNotice(url.searchParams.get('hackatime'), configured);
 
 	let github: string | null = null;
 	let linked = false;
 	let projects: { name: string; seconds: number; hours: string; eligible: boolean }[] = [];
 	let projectsFailed = false;
 
-	if (configured && databaseConfigured()) {
+	if (participant && configured && databaseConfigured()) {
 		try {
-			const live = await liveProjects(admin.email);
+			const live = await liveProjects(participant.email);
 			github = live.github;
 			linked = live.linked;
 			projects = live.projects;
@@ -63,16 +65,20 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		}
 	}
 
+	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');
 	const ticket =
-		configured && privateEnv('ADMIN_SESSION_SECRET')
+		participant && configured && sessionSecret
 			? await seal(
-					{ purpose: 'hackatime-start', email: admin.email, exp: Date.now() + 10 * 60 * 1000 },
-					privateEnv('ADMIN_SESSION_SECRET')!
+					{ purpose: 'hackatime-start', email: participant.email, exp: Date.now() + 10 * 60 * 1000 },
+					sessionSecret
 				)
 			: null;
 
 	return {
-		handle: admin.handle,
+		handle: null,
+		participant: participant
+			? { email: participant.email, name: participant.name, verificationStatus: participant.verificationStatus }
+			: null,
 		phase,
 		allowed,
 		preview: phase === 'early',
@@ -86,6 +92,11 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		shipped
 	};
 };
+
+function signinNotice(flag: string | null): string | null {
+	if (flag === 'failed') return "sign-in didn't work. try again.";
+	return null;
+}
 
 function hackatimeNotice(flag: string | null, configured: boolean): string | null {
 	if (flag === 'failed') return "hackatime didn't connect. try again.";
@@ -146,8 +157,8 @@ async function liveProjects(email: string): Promise<{
 
 export const actions: Actions = {
 	default: async ({ request, cookies, url }) => {
-		const admin = await currentAdminView(cookies, url);
-		if (admin.status !== 'in') error(404, 'Not Found');
+		const access = await northernPageAllowed(cookies, url);
+		const participant = await currentParticipant(cookies, url);
 
 		const data = await request.formData();
 		const project = String(data.get('project') ?? '');
@@ -156,9 +167,10 @@ export const actions: Actions = {
 		const demo = String(data.get('demo') ?? '');
 		const picked = String(data.get('hackatime') ?? '');
 		const values = { project, description, repo, demo, hackatime: picked };
+		if (!participant) return fail(401, { ...values, error: 'sign in with hack club first' });
 
 		const phase = submitPhase(new Date());
-		if (!canSubmit(phase, true)) {
+		if (!canSubmit(phase, access.admin)) {
 			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : 'opens nov 27' });
 		}
 
@@ -176,7 +188,7 @@ export const actions: Actions = {
 	});
 		if (!client) return fail(400, { ...values, error: 'Hackatime not connected yet' });
 
-		const live = await liveProjects(admin.email);
+		const live = await liveProjects(participant.email);
 		if (!live.linked || live.failed) return fail(400, { ...values, error: 'connect hackatime, then pick a project' });
 		const match = live.projects.find((item) => item.name === picked);
 		if (!match) return fail(400, { ...values, error: 'pick one of your hackatime projects' });
@@ -195,7 +207,9 @@ export const actions: Actions = {
 		try {
 			submissionId = await insertSubmission(await appDatabase(), {
 				challenge: NORTHERN_SLUG,
-				email: admin.email,
+				email: participant.email,
+				participantId: participant.id,
+				hackatimeUserId: (await readHackatimeConnection(await appDatabase(), participant.email))?.hackatimeUserId ?? null,
 				projectName: name,
 				description: story,
 				repoUrl,
@@ -207,6 +221,9 @@ export const actions: Actions = {
 			});
 		} catch (err) {
 			if (err instanceof DatabaseUnconfigured) return fail(500, { ...values, error: 'database is not configured' });
+			if (err instanceof HackatimeProjectTaken || isUniqueViolation(err)) {
+				return fail(409, { ...values, error: 'that hackatime project was already submitted' });
+			}
 			throw err;
 		}
 		await runSubmissionChecks(submissionId).catch(() => undefined);

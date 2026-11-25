@@ -103,7 +103,7 @@
 				<p class="banner strip torn">{form?.error ?? data.notice}</p>
 			{/if}
 			<div class="formhead">
-				<h2>your project</h2>
+				<h2>{data.participant ? 'your project' : 'sign in'}</h2>
 				{#if shipAs}
 					<span class="tagwrap ontag">
 						<img class="string" src="/hackathon/tag-string.svg" alt="" />
@@ -111,6 +111,10 @@
 					</span>
 				{/if}
 			</div>
+			{#if !data.participant}
+				<p class="sub">sign in with hack club, then connect hackatime and pick a project.</p>
+				<p class="ship"><a class="btn stampbtn inkstamp stamp" href="/hackathon/auth/login">sign in</a></p>
+			{:else}
 			<fieldset disabled={!data.allowed}>
 				<div class="fields">
 					<div class="f">
@@ -222,6 +226,7 @@
 					</p>
 				</div>
 			</fieldset>
+			{/if}
 		</form>
 	</main>
 	<div class="foot-space" aria-hidden="true"></div>

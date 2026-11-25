@@ -18,12 +18,13 @@ export function authorizeUrl(options: {
 	state: string;
 	nonce: string;
 	loginHint?: string;
+	scope?: string;
 }): string {
 	const url = new URL(AUTHORIZE);
 	url.searchParams.set('client_id', options.clientId);
 	url.searchParams.set('redirect_uri', options.redirectUri);
 	url.searchParams.set('response_type', 'code');
-	url.searchParams.set('scope', SCOPE);
+	url.searchParams.set('scope', options.scope ?? SCOPE);
 	url.searchParams.set('state', options.state);
 	url.searchParams.set('nonce', options.nonce);
 	if (options.loginHint) {
