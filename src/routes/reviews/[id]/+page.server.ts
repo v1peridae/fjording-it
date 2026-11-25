@@ -8,7 +8,7 @@ import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/ap
 import { currentAdminView, enforceOwner, enforceStaff } from '#lib/server/admin.ts';
 import { fetchHackatimeProjects, formatHours } from '#lib/server/hackatime.ts';
 import { getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
-import { runSubmissionChecks } from '#lib/server/run-checks.ts';
+import { reviewSignalsFor, runSubmissionChecks } from '#lib/server/run-checks.ts';
 import {
 	airtableEligible,
 	applyDecision,
@@ -81,6 +81,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		submission,
 		reviews: await listReviews(db, id),
 		checks: await latestChecks(db, id),
+		signals: await reviewSignalsFor(id).catch(() => []),
 		outbox: await latestOutbox(db, id),
 		allowed,
 		decisions: stage ? decisionsFor(stage) : [],
