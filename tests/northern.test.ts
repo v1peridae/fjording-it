@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { assertCreateOnly } from '../src/lib/migrations.ts';
-import { identityFromClaims, identityFromMe } from '../src/lib/participant-identity.ts';
+import { addressCheck, ageCheck, identityFromClaims, identityFromMe, PARTICIPANT_SCOPES } from '../src/lib/participant-identity.ts';
 import { northernIsPublic } from '../src/lib/northern-access.ts';
 import { airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
 import {
@@ -139,4 +139,25 @@ test('the migration creates tables and does not remove them', () => {
 	assert.equal(identity?.birthday, null);
 	const withBirthday = identityFromMe({ identity: { birthday: '2008-01-02', addresses: [] } }, identity!);
 	assert.equal(withBirthday.birthday, '2008-01-02');
+	assert.equal(ageCheck(withBirthday.birthday), 'recorded');
+	assert.equal(addressCheck(withBirthday.address), 'recorded');
+});
+
+test('participant sign-in omits address and birthday and treats them as unknown', () => {
+	assert.equal(PARTICIPANT_SCOPES, 'openid profile email name slack_id verification_status');
+	assert.equal(/\baddress\b/.test(PARTICIPANT_SCOPES), false);
+	assert.equal(/\bbirthdate\b/.test(PARTICIPANT_SCOPES), false);
+	const bare = identityFromClaims({ sub: 'ident!1', email: 'a@hackclub.com', email_verified: true });
+	assert.ok(bare);
+	assert.equal(ageCheck(bare?.birthday), 'unknown');
+	assert.equal(addressCheck(bare?.address), 'unknown');
+	const messy = identityFromMe(
+		{ identity: { addresses: 'not-a-list', birthday: { year: 2008 }, verification_status: 'pending' } },
+		bare!
+	);
+	assert.equal(messy.verificationStatus, 'pending');
+	assert.equal(messy.birthday, null);
+	assert.equal(ageCheck(messy.birthday), 'unknown');
+	assert.equal(addressCheck(messy.address), 'unknown');
+	assert.equal(identityFromMe(null, bare!), bare);
 });

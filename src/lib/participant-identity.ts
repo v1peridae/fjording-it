@@ -21,8 +21,22 @@ export type ParticipantIdentity = {
 	address: ParticipantAddress | null;
 };
 
-/** Community Hack Club Auth scopes. Address and birthday are stored only when the token actually includes them. */
-export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
+/**
+ * Community Untrusted Hack Club Auth scopes. This app does not grant address or birthdate.
+ * TODO: restore `address` and `birthdate` once the app is verified. Until then those claims
+ * are absent, and age/address checks stay `unknown` instead of blocking sign-in or submission.
+ */
+export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status';
+
+/** Missing birthday or address is unknown. A recorded value never blocks sign-in or submission. */
+export function ageCheck(birthday: string | null | undefined): 'unknown' | 'recorded' {
+	return birthday ? 'recorded' : 'unknown';
+}
+
+export function addressCheck(address: ParticipantAddress | null | undefined): 'unknown' | 'recorded' {
+	if (!address) return 'unknown';
+	return Object.values(address).some(Boolean) ? 'recorded' : 'unknown';
+}
 
 export function identityFromClaims(claims: Record<string, unknown>): ParticipantIdentity | null {
 	const hackClubId = text(claims.sub);
@@ -41,8 +55,7 @@ export function identityFromClaims(claims: Record<string, unknown>): Participant
 		slackId: text(claims.slack_id),
 		verificationStatus: text(claims.verification_status),
 		yswsEligible: typeof claims.ysws_eligible === 'boolean' ? claims.ysws_eligible : null,
-		birthday: dateOnly(claims.birthdate) ?? dateOnly(claims.birthday),
-		address: addressFrom(claims.address)
+		...readOptionalDemographics(claims.birthdate ?? claims.birthday, addressFrom(claims.address))
 	};
 }
 
@@ -54,7 +67,7 @@ export function identityFromMe(body: unknown, fallback: ParticipantIdentity): Pa
 	const row = identity as Record<string, unknown>;
 	const addresses = Array.isArray(row.addresses) ? row.addresses : [];
 	const primary = addresses.find((item) => item && typeof item === 'object' && (item as { primary?: unknown }).primary === true) ?? addresses[0];
-	const address = addressRecord(primary);
+	const fromMe = readOptionalDemographics(row.birthday, addressRecord(primary));
 	return {
 		...fallback,
 		hackClubId: text(row.id) ?? fallback.hackClubId,
@@ -65,9 +78,21 @@ export function identityFromMe(body: unknown, fallback: ParticipantIdentity): Pa
 		slackId: text(row.slack_id) ?? fallback.slackId,
 		verificationStatus: text(row.verification_status) ?? fallback.verificationStatus,
 		yswsEligible: typeof row.ysws_eligible === 'boolean' ? row.ysws_eligible : fallback.yswsEligible,
-		birthday: dateOnly(row.birthday) ?? fallback.birthday,
-		address: address ?? fallback.address
+		birthday: fromMe.birthday ?? fallback.birthday,
+		address: fromMe.address ?? fallback.address
 	};
+}
+
+/** Userinfo may omit address and birthday. A bad shape is the same as absent. */
+function readOptionalDemographics(birthday: unknown, address: ParticipantAddress | null): {
+	birthday: string | null;
+	address: ParticipantAddress | null;
+} {
+	try {
+		return { birthday: dateOnly(birthday), address };
+	} catch {
+		return { birthday: null, address: null };
+	}
 }
 
 function addressFrom(value: unknown): ParticipantAddress | null {

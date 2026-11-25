@@ -113,6 +113,8 @@
 										<br />{data.participant.email}
 										<br />hack club {data.participant.hackClubId}
 										<br />verification {data.participant.verificationStatus ?? 'not on the sign-in'}
+										<br />age {data.participant.age}
+										<br />address {data.participant.address}
 										{#if data.participant.slackId}<br />slack {data.participant.slackId}{/if}
 									{:else}
 										<br />no hack club auth record on this submission
