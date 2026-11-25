@@ -45,12 +45,17 @@ function clearSession(cookies: Cookies, url: URL) {
 	}
 }
 
-/** One site-wide cookie, and drop any older path-scoped copies of the same name. */
+/**
+ * One site-wide cookie, and drop any older path-scoped copies of the same name.
+ * The canonical cookie is written last. A cleared path still shadows `cookies.get`
+ * for the rest of this request when it is more specific than `/`, so read the
+ * session once and keep that result.
+ */
 function publishSession(cookies: Cookies, url: URL, token: string) {
-	cookies.set(SESSION_COOKIE, token, cookieOptions(url, SESSION_MS / 1000, ADMIN_COOKIE_PATH));
 	for (const path of LEGACY_ADMIN_COOKIE_PATHS) {
 		cookies.delete(SESSION_COOKIE, cookieOptions(url, undefined, path));
 	}
+	cookies.set(SESSION_COOKIE, token, cookieOptions(url, SESSION_MS / 1000, ADMIN_COOKIE_PATH));
 }
 
 export function signOutAdmin(cookies: Cookies, url: URL) {

@@ -7,8 +7,31 @@ import {
 	hackathonDeadline,
 	hackathonKickoff
 } from '../src/lib/hackathon.ts';
+import { hackathonNav } from '../src/lib/hackathon-nav.ts';
 
 const SECRET = 'test-session-secret';
+
+test('public hackathon nav stays free of admin links', () => {
+	const labels = (status: 'in' | 'reviewer' | 'denied' | 'out', participant = false) =>
+		hackathonNav(status, participant).public.map((link) => link.label);
+	const publicLabels = ['The Northern Challenge', 'prizes', 'rules', 'submit', 'sign in'];
+	assert.deepEqual(labels('out'), publicLabels);
+	assert.deepEqual(labels('denied'), publicLabels);
+	assert.equal(hackathonNav('out').staff, null);
+	assert.equal(hackathonNav('denied').staff, null);
+
+	const signedIn = hackathonNav('out', true);
+	assert.equal(signedIn.staff, null);
+	assert.deepEqual(
+		signedIn.public.map((link) => link.label),
+		['The Northern Challenge', 'prizes', 'rules', 'submit']
+	);
+
+	assert.equal(hackathonNav('in').staff, 'owner');
+	assert.equal(hackathonNav('reviewer').staff, 'reviewer');
+	assert.ok(!labels('in').includes('Stats'));
+	assert.ok(!labels('reviewer').includes('Reviews'));
+});
 
 test('hackathon stays hidden unless the visitor is an allowed admin', () => {
 	assert.equal(hackathonAllowed('in'), true);

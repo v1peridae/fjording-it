@@ -71,11 +71,11 @@ export async function currentParticipant(cookies: Cookies, url: URL): Promise<Pa
 	}
 }
 
-export async function northernPageAllowed(cookies: Cookies, url: URL): Promise<{ admin: boolean }> {
-	const admin = await currentAdminView(cookies, url);
-	if (northernIsPublic(privateEnv('NORTHERN_PUBLIC'))) return { admin: admin.status === 'in' };
-	enforceOwner(admin.status, url);
-	return { admin: true };
+export async function northernPageAllowed(cookies: Cookies, url: URL) {
+	const view = await currentAdminView(cookies, url);
+	if (northernIsPublic(privateEnv('NORTHERN_PUBLIC'))) return { admin: view.status === 'in', view };
+	enforceOwner(view.status, url);
+	return { admin: true, view };
 }
 
 export async function beginParticipantLogin(options: { cookies: Cookies; url: URL }): Promise<void> {
