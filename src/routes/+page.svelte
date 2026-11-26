@@ -10,8 +10,8 @@
 	<meta name="description" content="40 teens will be in a fjord in norway this april" />
 </svelte:head>
 
-<main class="flex min-h-dvh items-center justify-center overflow-x-clip px-3 py-6 md:p-6">
-	<div class="flex w-full max-w-[1120px] flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-5">
+<main class="relative flex min-h-dvh justify-center overflow-x-clip px-3 py-6 md:px-6 md:py-8">
+	<div class="stage relative w-full md:w-[min(1000px,100%)]">
 	<a class="ferry paper" href="/hackathon?from=/">
 		<img
 			src="/tromso-aurora.webp"
@@ -23,7 +23,7 @@
 		<span class="font-pirate-3d">Win a $300 flight stipend NOW</span>
 	</a>
 	<div
-		class="@container relative isolate flex w-full min-w-0 flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:w-[min(760px,100%)] md:flex-1 md:p-8"
+		class="ticket @container relative isolate z-[1] flex w-full flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:p-8"
 	>
 		<div class="relative flex items-center md:mt-[5cqw] md:h-[13cqw]">
 			<h1
@@ -113,8 +113,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		width: min(86%, 300px);
-		padding: 22px 16px 26px;
+		width: min(86%, 280px);
+		margin: 0 auto 10px;
+		padding: 18px 14px 20px;
 		color: #07160a;
 		text-decoration: none;
 		transform: rotate(-3deg);
@@ -122,31 +123,44 @@
 
 	.ferry img {
 		width: 100%;
-		height: 128px;
+		height: 112px;
 		object-fit: cover;
 		object-position: center 40%;
 	}
 
 	.ferry .font-times {
-		font-size: 16px;
+		font-size: 15px;
 		line-height: 1.15;
 	}
 
 	.ferry .font-pirate-3d {
-		font-size: 28px;
+		font-size: clamp(20px, 6vw, 26px);
 		line-height: 1.05;
 	}
 
-	@media (min-width: 51.3125rem) {
+	@media (min-width: 1200px) {
 		.ferry {
-			width: 248px;
-			flex: none;
-			margin-top: 36px;
+			position: absolute;
+			z-index: 0;
+			width: clamp(110px, calc((100vw - 1000px) / 2 - 30px), 190px);
+			margin: 0;
+			top: 48px;
+			right: calc(100% + 8px);
+			padding: 18px 16px 14px;
 			transform: rotate(-8deg);
+			transform-origin: right center;
 		}
 
 		.ferry img {
-			height: 150px;
+			height: clamp(72px, 7vw, 96px);
+		}
+
+		.ferry .font-times {
+			font-size: clamp(12px, 0.9vw, 14px);
+		}
+
+		.ferry .font-pirate-3d {
+			font-size: clamp(16px, 1.25vw, 22px);
 		}
 	}
 </style>

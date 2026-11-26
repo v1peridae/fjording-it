@@ -211,13 +211,20 @@ export async function fetchHackatimeProfile(
 	}
 }
 
+/** All-time project lists. No challenge-window start or end date. */
+export const HACKATIME_PROJECT_PATHS = [
+	'/authenticated/projects',
+	'/users/my/stats?features=projects',
+	'/users/my/projects'
+] as const;
+
 export async function fetchHackatimeProjects(
 	accessToken: string,
 	fetchImpl: typeof fetch = fetch
 ): Promise<HackatimeProject[] | null> {
 	try {
 		let empty: HackatimeProject[] | null = null;
-		for (const path of ['/authenticated/projects', '/users/my/stats?features=projects', '/users/my/projects']) {
+		for (const path of HACKATIME_PROJECT_PATHS) {
 			const json = await authedJson(path, accessToken, fetchImpl);
 			const projects = json ? projectsFromPayload(json) : null;
 			if (projects && projects.some((project) => project.totalSeconds > 0)) return projects;
