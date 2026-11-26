@@ -92,15 +92,13 @@ export function identityFromClaims(claims: Record<string, unknown>): Participant
 	};
 }
 
-/** Merge /api/v1/me, which uses different names from the OIDC claims. */
+/** Merge /api/v1/me. Birthday is `birthday` there; the id token uses `birthdate`. */
 export function identityFromMe(body: unknown, fallback: ParticipantIdentity): ParticipantIdentity {
 	if (!body || typeof body !== 'object') return fallback;
-	const identity = (body as { identity?: unknown }).identity;
-	if (!identity || typeof identity !== 'object') return fallback;
-	const row = identity as Record<string, unknown>;
-	const addresses = Array.isArray(row.addresses) ? row.addresses : [];
-	const primary = addresses.find((item) => item && typeof item === 'object' && (item as { primary?: unknown }).primary === true) ?? addresses[0];
-	const fromMe = readOptionalDemographics(row.birthday, addressRecord(primary));
+	const root = body as Record<string, unknown>;
+	const nested = root.identity;
+	const row = nested && typeof nested === 'object' && !Array.isArray(nested) ? (nested as Record<string, unknown>) : root;
+	const fromMe = readOptionalDemographics(row.birthday ?? row.birthdate ?? row.birth_date, firstAddress(row.addresses ?? row.address));
 	return {
 		...fallback,
 		hackClubId: text(row.id) ?? fallback.hackClubId,
@@ -144,15 +142,26 @@ function addressFrom(value: unknown): ParticipantAddress | null {
 	return Object.values(address).some(Boolean) ? address : null;
 }
 
+function firstAddress(value: unknown): ParticipantAddress | null {
+	if (Array.isArray(value)) {
+		const primary =
+			value.find((item) => item && typeof item === 'object' && (item as { primary?: unknown }).primary === true) ?? value[0];
+		return addressRecord(primary) ?? addressFrom(primary);
+	}
+	return addressRecord(value) ?? addressFrom(value);
+}
+
 function addressRecord(value: unknown): ParticipantAddress | null {
-	if (!value || typeof value !== 'object') return null;
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 	const row = value as Record<string, unknown>;
+	const street = text(row.street_address);
+	const [street1, street2] = street ? street.split('\n') : [null, null];
 	const address = {
-		line1: text(row.line_1),
-		line2: text(row.line_2),
-		city: text(row.city),
-		state: text(row.state),
-		postalCode: text(row.postal_code),
+		line1: text(row.line_1) ?? text(row.line1) ?? street1,
+		line2: text(row.line_2) ?? text(row.line2) ?? street2,
+		city: text(row.city) ?? text(row.locality),
+		state: text(row.state) ?? text(row.region),
+		postalCode: text(row.postal_code) ?? text(row.postalCode),
 		country: text(row.country)
 	};
 	return Object.values(address).some(Boolean) ? address : null;
@@ -177,6 +186,15 @@ function text(value: unknown): string | null {
 }
 
 function dateOnly(value: unknown): string | null {
+	if (value && typeof value === 'object' && !Array.isArray(value)) {
+		const row = value as { year?: unknown; month?: unknown; day?: unknown };
+		const year = Number(row.year);
+		const month = Number(row.month);
+		const day = Number(row.day);
+		if (Number.isInteger(year) && Number.isInteger(month) && Number.isInteger(day)) {
+			return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+		}
+	}
 	const raw = text(value);
 	if (!raw) return null;
 	const match = /^(\d{4}-\d{2}-\d{2})/.exec(raw);

@@ -46,7 +46,7 @@ export async function updateHackatimeTokens(db: Sql, email: string, tokens: Hack
 	await db.query(
 		`UPDATE hackatime_connections
 		 SET access_token = $1, refresh_token = $2, expires_at = $3, scope = $4, updated_at = $5
-		 WHERE email = $6`,
+		 WHERE lower(email) = lower($6)`,
 		[tokens.accessToken, tokens.refreshToken, expiresAt, tokens.scope, new Date(now).toISOString(), email]
 	);
 }
@@ -54,7 +54,7 @@ export async function updateHackatimeTokens(db: Sql, email: string, tokens: Hack
 export async function readHackatimeConnection(db: Sql, email: string): Promise<HackatimeConnection | null> {
 	const { rows } = await db.query(
 		`SELECT email, access_token, refresh_token, expires_at, github_username, hackatime_user_id
-		 FROM hackatime_connections WHERE email = $1`,
+		 FROM hackatime_connections WHERE lower(email) = lower($1)`,
 		[email]
 	);
 	const row = rows[0];

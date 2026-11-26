@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { arrangeHackatimeProjects } from '../src/lib/hackatime-projects.ts';
+import { projectsFromPayload } from '../src/lib/server/hackatime.ts';
 import { displayName, identityFromClaims, identityFromMe, participantAfterLogin } from '../src/lib/participant-identity.ts';
 
 test('sign-in lands on the hackathon page', () => {
@@ -28,6 +29,15 @@ test('the hack club name is trimmed and not rebuilt from first and last', () => 
 	assert.equal(kept.name, 'McPhilbin');
 });
 
+test('hackatime project payloads keep the name and the seconds', () => {
+	const direct = projectsFromPayload({ projects: [{ name: 'lantern', total_seconds: 10 }] });
+	assert.equal(direct?.[0]?.name, 'lantern');
+	assert.equal(direct?.[0]?.totalSeconds, 10);
+	const nested = projectsFromPayload({ data: { projects: [{ project: 'tide', totalSeconds: 20 }] } });
+	assert.equal(nested?.[0]?.name, 'tide');
+	assert.equal(nested?.[0]?.totalSeconds, 20);
+});
+
 test('eligible hackatime projects lead, junk and short projects do not', () => {
 	const arranged = arrangeHackatimeProjects([
 		{ name: 'vscode-typescript', seconds: 8 * 3600, hours: '8h 0m', eligible: true },
@@ -44,6 +54,6 @@ test('eligible hackatime projects lead, junk and short projects do not', () => {
 	);
 	assert.deepEqual(
 		arranged.later.map((project) => project.name),
-		['frost']
+		['frost', 'empty']
 	);
 });
