@@ -113,7 +113,7 @@
 					<p class="amt">$300</p>
 					<p class="top">top 5 projects, each</p>
 					<p class="what">flight stipend to norway</p>
-					<p class="fine">unlocks when you buy your ticket. capped at what your flight really costs.</p>
+					<p class="fine">unlocks when you buy your ticket.</p>
 				</div>
 				<div class="cap torn">
 					<!-- Full cap: static/hackathon/cap.png (2000px). cap-600.png is the srcset candidate for the 170px / 110px slot. -->
