@@ -12,7 +12,7 @@ import {
 	parseGithubRepo,
 	priorExperienceCheck
 } from '../src/lib/review-checks.ts';
-import { applyDecision, approvedHours, lapseLinks, median } from '../src/lib/review-pipeline.ts';
+import { applyDecision, approvedHours, confirmAllowed, lapseLinks, median } from '../src/lib/review-pipeline.ts';
 import { hackathonKickoff } from '../src/lib/hackathon.ts';
 import { canSubmit, hoursEligible, presubmitTester, submitPhase } from '../src/lib/northern.ts';
 
@@ -64,6 +64,14 @@ test('checks only flag, and a missing repo is an honest miss', () => {
 	});
 	assert.equal(lapse.flag, 'flag');
 	assert.match(lapse.summary, /another submission/);
+});
+
+test('only a tester can be confirmed under 5 hours', () => {
+	assert.equal(confirmAllowed({ hackatimeSeconds: 0, overrideHours: null, tester: true }), true);
+	assert.equal(confirmAllowed({ hackatimeSeconds: 0, overrideHours: null, tester: false }), false);
+	assert.equal(confirmAllowed({ hackatimeSeconds: 5 * 3600, overrideHours: null, tester: false }), true);
+	assert.equal(confirmAllowed({ hackatimeSeconds: 0, overrideHours: 5, tester: false }), true);
+	assert.equal(confirmAllowed({ hackatimeSeconds: 3 * 3600, overrideHours: 4, tester: false }), false);
 });
 
 test('airtable sync stays off the sign-ups base and maps the ysws fields', () => {

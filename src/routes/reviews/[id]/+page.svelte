@@ -293,7 +293,7 @@
 							<div class="readonly-recap">
 								<h3>ready to confirm</h3>
 								<dl>
-									<dt>final hours</dt><dd><strong>{hours}h</strong> {five ? 'meets the 5 hour minimum' : 'under 5 hours'}</dd>
+									<dt>final hours</dt><dd><strong>{hours}h</strong> {five ? 'meets the 5 hour minimum' : data.canConfirm ? 'under 5 hours · tester exception' : 'under 5 hours · not eligible to confirm'}</dd>
 									<dt>stage 1</dt><dd>{first ? `${decisionLabel(first.decision)} by ${first.reviewerEmail}` : '—'}</dd>
 									<dt>stage 2</dt><dd>{fraud ? `${decisionLabel(fraud.decision)} by ${fraud.reviewerEmail}` : '—'}</dd>
 									<dt>airtable</dt><dd>{data.airtable === 'configured' ? (data.outbox ? data.outbox.status : 'not eligible until this confirm') : `not configured. ${data.airtable}`}</dd>
@@ -313,7 +313,7 @@
 							<input type="hidden" name="lapse_links" value={first?.lapseLinks.join(', ') ?? ''} />
 							{#if form?.error}<p>{form.error}</p>{/if}
 							<div class="form-actions">
-								<button class="stampbtn stamp" name="decision" value="confirmed">confirm &amp; approve</button>
+								<button class="stampbtn stamp" name="decision" value="confirmed" disabled={!data.canConfirm}>confirm &amp; approve</button>
 								<button class="btn btn-amber" name="decision" value="sent_back">Send back</button>
 							</div>
 						</form>
@@ -321,6 +321,7 @@
 						<section class="paper review-panel">
 							<div class="sec-head"><h2>{stage === 'done' ? 'completed' : 'this stage'}</h2></div>
 							<p>{stage === 'done' ? 'HQ already confirmed this submission.' : "you can't act on this stage"}</p>
+							{#if data.isTest}<p>test submission. left out of the challenge stats.</p>{/if}
 							<p>airtable: {data.airtable === 'configured' ? (data.outbox?.status ?? 'not eligible until hq confirms') : data.airtable}{data.outbox?.lastError ? ` · ${data.outbox.lastError}` : ''}</p>
 							{#if data.role === 'owner' && data.outbox && data.outbox.status !== 'synced'}
 								<form method="POST" action="?/sync"><button class="btn btn-ink" type="submit">sync to Airtable</button></form>

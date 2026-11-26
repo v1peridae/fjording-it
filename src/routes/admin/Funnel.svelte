@@ -22,7 +22,7 @@
 				<strong>{stage.count}</strong>
 				<span class="bar" aria-hidden="true"><span style:width="{stage.ofSignups ?? 0}%"></span></span>
 				<span class="meta">{pct(stage.ofPrevious)} of previous</span>
-				<span class="meta">{pct(stage.ofSignups)} of sign-ups</span>
+				<span class="meta">{pct(stage.ofSignups)} of challenge accounts</span>
 			</li>
 		{/each}
 	</ol>

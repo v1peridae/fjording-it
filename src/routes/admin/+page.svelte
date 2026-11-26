@@ -108,13 +108,13 @@
 			<div class="wrap">
 				<section class="kpi-grid" aria-label="At-a-glance metrics">
 					<div class="kpi">
-						<span class="k-lbl">sign-ups</span>
+						<span class="k-lbl">waitlist emails</span>
 						{#if 'error' in data.signups}
 							<span class="k-val">—</span>
 							<span class="k-sub">{data.signups.error}</span>
 						{:else}
 							<span class="k-val">{data.signups.count}</span>
-							<span class="k-sub">+{data.signups.today} in last 24h · Hack Club Auth</span>
+							<span class="k-sub">+{data.signups.today} in last 24h · email waitlist</span>
 						{/if}
 					</div>
 					<div class="kpi kiwi">

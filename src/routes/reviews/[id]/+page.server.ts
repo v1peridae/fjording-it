@@ -7,12 +7,14 @@ import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView, enforceOwner, enforceStaff } from '#lib/server/admin.ts';
 import { fetchHackatimeProjects, formatHours } from '#lib/server/hackatime.ts';
-import { getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
+import { flagTesterSubmissions, getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
+import { presubmitTester } from '#lib/northern.ts';
 import { reviewSignalsFor, runSubmissionChecks } from '#lib/server/run-checks.ts';
 import {
 	airtableEligible,
 	applyDecision,
 	approvedHours,
+	confirmAllowed,
 	decisionsFor,
 	isStage,
 	lapseLinks,
@@ -31,6 +33,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 	const id = Number(params.id);
 	if (!databaseConfigured() || !Number.isInteger(id)) error(404, 'Not Found');
 	const db = await appDatabase();
+	await flagTesterSubmissions(db, privateEnv('PRESUBMIT_TESTER_EMAILS')).catch(() => undefined);
 	const submission = await getSubmission(db, id);
 	if (!submission) error(404, 'Not Found');
 	const stage = isStage(submission.stage) ? submission.stage : null;
@@ -89,7 +92,13 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		liveHours,
 		liveNote,
 		airtable: 'error' in airtable ? airtable.error : 'configured',
-		hackatimeHours: formatHours(submission.hackatimeSeconds)
+		hackatimeHours: formatHours(submission.hackatimeSeconds),
+		isTest: submission.isTest,
+		canConfirm: confirmAllowed({
+			hackatimeSeconds: submission.hackatimeSeconds,
+			overrideHours: submission.overrideHours,
+			tester: presubmitTester(submission.email, privateEnv('PRESUBMIT_TESTER_EMAILS'))
+		})
 	};
 };
 
@@ -114,6 +123,16 @@ export const actions: Actions = {
 		if (!links) return fail(400, { error: 'lapse links need to be comma-separated urls' });
 		const hours = overrideHours(String(data.get('override_hours') ?? ''));
 		if (hours === undefined) return fail(400, { error: 'override hours must be a number' });
+		if (
+			decision === 'confirmed' &&
+			!confirmAllowed({
+				hackatimeSeconds: submission.hackatimeSeconds,
+				overrideHours: submission.overrideHours,
+				tester: presubmitTester(submission.email, privateEnv('PRESUBMIT_TESTER_EMAILS'))
+			})
+		) {
+			return fail(400, { error: 'under 5h, not eligible to confirm' });
+		}
 
 		await withTransaction((db) =>
 			recordReview(db, {
