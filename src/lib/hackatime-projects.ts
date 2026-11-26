@@ -13,6 +13,13 @@ export function isJunkHackatimeName(name: string): boolean {
 	return false;
 }
 
+/** Every named project, longest first. Hours do not hide a project from the setup list. */
+export function allHackatimeProjects(projects: HackatimeChoice[]): HackatimeChoice[] {
+	return projects
+		.filter((project) => project.name.trim() && project.seconds >= 0)
+		.sort((left, right) => right.seconds - left.seconds || left.name.localeCompare(right.name));
+}
+
 /** Eligible projects first, longest first. Blank names stay out. Zero minutes stay visible as not eligible. */
 export function arrangeHackatimeProjects(projects: HackatimeChoice[]): {
 	eligible: HackatimeChoice[];

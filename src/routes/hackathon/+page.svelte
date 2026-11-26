@@ -92,7 +92,11 @@
 			{:else if data.participantLabel}
 				<p class="yourein strip torn">you're in, {data.participantLabel}.</p>
 			{/if}
-			{#if data.needsOnboarding}
+			{#if data.showJoin}
+				<form class="join" method="POST" action="?/join">
+					<button class="stamp" type="submit">join the Northern Challenge</button>
+				</form>
+			{:else if data.needsOnboarding}
 				<p class="remind strip torn">when you're ready, <a href="/hackathon/start">name your project and link Hackatime</a>.</p>
 			{/if}
 		</div>

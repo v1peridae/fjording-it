@@ -157,6 +157,18 @@ export async function participantProject(db: Sql, participantId: number): Promis
 	};
 }
 
+export type JoinChoice = 'in' | 'later' | null;
+
+export async function challengeChoice(db: Sql, participantId: number): Promise<JoinChoice> {
+	const { rows } = await db.query(`SELECT challenge_join FROM participants WHERE id = $1`, [participantId]);
+	const value = rows[0]?.challenge_join;
+	return value === 'in' || value === 'later' ? value : null;
+}
+
+export async function setChallengeChoice(db: Sql, participantId: number, choice: 'in' | 'later') {
+	await db.query(`UPDATE participants SET challenge_join = $2 WHERE id = $1`, [participantId, choice]);
+}
+
 export async function saveParticipantProject(
 	db: Sql,
 	input: { participantId: number; name: string; description: string; hackatimeProject: string }
@@ -170,6 +182,7 @@ export async function saveParticipantProject(
 		   hackatime_project = excluded.hackatime_project`,
 		[input.participantId, input.name, input.description, input.hackatimeProject]
 	);
+	await setChallengeChoice(db, input.participantId, 'in');
 }
 
 export async function codingSnapshot(db: Sql, today: string) {

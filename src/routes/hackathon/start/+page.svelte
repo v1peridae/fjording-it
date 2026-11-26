@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { arrangeHackatimeProjects } from '#lib/hackatime-projects.ts';
+	import { allHackatimeProjects } from '#lib/hackatime-projects.ts';
 	import PublicNav from '../PublicNav.svelte';
 	import type { PageProps } from './$types';
 	import '../hackathon.css';
@@ -7,11 +7,11 @@
 	let { data, form }: PageProps = $props();
 	let picked = $state<string | undefined>(undefined);
 	let query = $state('');
-	let arranged = $derived(arrangeHackatimeProjects(data.projects));
 	let needle = $derived(query.trim().toLowerCase());
-	let eligible = $derived(arranged.eligible.filter((project) => project.name.toLowerCase().includes(needle)));
-	let later = $derived(arranged.later.filter((project) => project.name.toLowerCase().includes(needle)));
-	let choice = $derived(picked || form?.hackatime || arranged.eligible[0]?.name || '');
+	let projects = $derived(
+		allHackatimeProjects(data.projects).filter((project) => project.name.toLowerCase().includes(needle))
+	);
+	let choice = $derived(picked || form?.hackatime || projects[0]?.name || '');
 </script>
 
 <svelte:head>
@@ -60,25 +60,17 @@
 						<label class="hk-search" for="hk-q">filter projects</label>
 						<input id="hk-q" class="hk-q" type="search" placeholder="filter projects" bind:value={query} />
 					{/if}
-					<div class="pick" role="listbox" aria-labelledby="hk-l">
-						<div class="cur"><span>{choice || (data.connected ? 'choose a project' : 'connect hackatime to choose a project')}</span><i>▾</i></div>
-						{#each eligible as project (project.name)}
+					<div class="pick all" role="listbox" aria-labelledby="hk-l">
+						<div class="cur">
+							<span>{choice || (data.connected ? 'no hackatime projects yet' : 'connect hackatime to choose a project')}</span>
+							<i>▾</i>
+						</div>
+						{#each projects as project (project.name)}
 							<label class="opt" class:sel={choice === project.name}>
-								<input type="radio" name="hackatime" value={project.name} checked={choice === project.name} onclick={() => (picked = project.name)} />
+								<input type="radio" name="hackatime" value={project.name} checked={choice === project.name} required onclick={() => (picked = project.name)} />
 								{project.name} · {project.hours}
 							</label>
 						{/each}
-						{#if later.length}
-							<details class="later">
-								<summary>not eligible yet ({later.length})</summary>
-								{#each later as project (project.name)}
-									<label class="opt" class:sel={choice === project.name}>
-										<input type="radio" name="hackatime" value={project.name} checked={choice === project.name} onclick={() => (picked = project.name)} />
-										{project.name} · {project.hours}
-									</label>
-								{/each}
-							</details>
-						{/if}
 					</div>
 				</div>
 			</div>

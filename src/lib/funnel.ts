@@ -1,5 +1,6 @@
 export type FunnelCounts = {
 	signedUp: number;
+	optedIn: number;
 	connected: number;
 	addedProject: number;
 	submitted: number;
@@ -19,6 +20,7 @@ export type FunnelStage = {
 export const FUNNEL_SQL = `
 SELECT
 	(SELECT count(*)::int FROM participants) AS signed_up,
+	(SELECT count(*)::int FROM participants WHERE challenge_join = 'in') AS opted_in,
 	(SELECT count(*)::int FROM participants p
 	  WHERE EXISTS (
 	    SELECT 1 FROM hackatime_connections h
@@ -46,6 +48,7 @@ SELECT
 export function funnelFromRow(row: Record<string, unknown>): FunnelCounts {
 	return {
 		signedUp: num(row.signed_up),
+		optedIn: num(row.opted_in),
 		connected: num(row.connected),
 		addedProject: num(row.added_project),
 		submitted: num(row.submitted),
@@ -57,6 +60,7 @@ export function funnelFromRow(row: Record<string, unknown>): FunnelCounts {
 export function funnelStages(counts: FunnelCounts): { stages: FunnelStage[]; approvedHours: number } {
 	const rows: { key: string; label: string; count: number }[] = [
 		{ key: 'signed_up', label: 'signed up', count: counts.signedUp },
+		{ key: 'opted_in', label: 'opted in', count: counts.optedIn },
 		{ key: 'connected', label: 'connected hackatime', count: counts.connected },
 		{ key: 'project', label: 'added a project', count: counts.addedProject },
 		{ key: 'submitted', label: 'submitted', count: counts.submitted },

@@ -4,6 +4,7 @@ import {
 	identityFromClaims,
 	identityFromMe,
 	PARTICIPANT_SCOPES,
+	signInFrom,
 	type ParticipantIdentity
 } from '../participant-identity.ts';
 import {
@@ -92,7 +93,12 @@ export async function beginParticipantLogin(options: { cookies: Cookies; url: UR
 		console.error('participant sign-in missing hack club auth env');
 		error(500, 'sign-in is not configured');
 	}
-	const attempt = { state: randomToken(), nonce: randomToken(), exp: Date.now() + OAUTH_MS };
+	const attempt = {
+		state: randomToken(),
+		nonce: randomToken(),
+		exp: Date.now() + OAUTH_MS,
+		from: signInFrom(options.url.searchParams.get('from'))
+	};
 	writeCookie(
 		options.cookies,
 		options.url,
@@ -113,19 +119,22 @@ export async function beginParticipantLogin(options: { cookies: Cookies; url: UR
 	);
 }
 
-export async function finishParticipantLogin(options: { cookies: Cookies; url: URL }): Promise<'ok' | 'failed'> {
+export async function finishParticipantLogin(options: {
+	cookies: Cookies;
+	url: URL;
+}): Promise<{ status: 'ok' | 'failed'; from: string | null }> {
 	await northernPageAllowed(options.cookies, options.url);
 	const secret = privateEnv('ADMIN_SESSION_SECRET');
 	const clientId = privateEnv('HACKCLUB_AUTH_CLIENT_ID');
 	const clientSecret = privateEnv('HACKCLUB_AUTH_CLIENT_SECRET');
 	const token = options.cookies.get(OAUTH_COOKIE);
 	clearCookie(options.cookies, options.url, OAUTH_COOKIE);
-	if (!secret || !token || !clientId || !clientSecret) return 'failed';
+	if (!secret || !token || !clientId || !clientSecret) return { status: 'failed', from: null };
 	const attempt = await openOauth(token, secret);
 	const code = options.url.searchParams.get('code');
 	const state = options.url.searchParams.get('state');
 	if (options.url.searchParams.get('error') || !attempt || !code || !state || !sameToken(state, attempt.state)) {
-		return 'failed';
+		return { status: 'failed', from: null };
 	}
 	try {
 		const identity = await identityFromCode({
@@ -143,10 +152,10 @@ export async function finishParticipantLogin(options: { cookies: Cookies; url: U
 			await seal({ sub: identity.hackClubId, email: identity.email, exp: Date.now() + SESSION_MS }, secret),
 			SESSION_MS / 1000
 		);
-		return 'ok';
+		return { status: 'ok', from: signInFrom(attempt.from) };
 	} catch (err) {
 		console.error('participant sign-in failed', err instanceof Error ? err.message : 'failed');
-		return 'failed';
+		return { status: 'failed', from: null };
 	}
 }
 

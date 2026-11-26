@@ -27,9 +27,45 @@ export type ParticipantIdentity = {
  */
 export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
 
+export type JoinChoice = 'in' | 'later' | null;
+
+/** `/` asks the join question. A hackathon path skips it and counts as opted in. */
+export function signInFrom(value: string | null | undefined): string {
+	if (value === '/') return '/';
+	if (
+		value &&
+		value.startsWith('/hackathon') &&
+		!value.includes('?') &&
+		!value.includes('#') &&
+		!value.includes('//')
+	) {
+		return value;
+	}
+	return '/hackathon';
+}
+
+export function afterSignIn(options: {
+	ok: boolean;
+	from: string | null;
+	choice: JoinChoice;
+	hasProject: boolean;
+}): string {
+	if (!options.ok) return '/hackathon?signin=failed';
+	if (signInFrom(options.from) !== '/') {
+		return options.hasProject ? '/hackathon' : '/hackathon/start';
+	}
+	if (options.choice === 'later') return '/hackathon';
+	if (options.choice === 'in') return options.hasProject ? '/hackathon' : '/hackathon/start';
+	return '/hackathon/join';
+}
+
 export function participantAfterLogin(ok: boolean, needsOnboarding = false): string {
-	if (!ok) return '/hackathon?signin=failed';
-	return needsOnboarding ? '/hackathon/start' : '/hackathon';
+	return afterSignIn({
+		ok,
+		from: '/hackathon',
+		choice: needsOnboarding ? null : 'in',
+		hasProject: !needsOnboarding
+	});
 }
 
 /** Missing birthday or address is unknown. A recorded value never blocks sign-in or submission. */
