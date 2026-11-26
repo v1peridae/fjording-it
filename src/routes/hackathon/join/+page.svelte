@@ -12,6 +12,17 @@
 </svelte:head>
 
 <div class="hackathon submit-page">
+	<picture class="bg">
+		<source media="(max-width: 760px)" srcset="/hackathon/lauklines-3600.jpg" />
+		<img
+			src="/hackathon/lauklines-3600.jpg"
+			srcset="/hackathon/lauklines-2400.jpg 2400w, /hackathon/lauklines-3600.jpg 3600w"
+			sizes="100vw"
+			width="3600"
+			height="2400"
+			alt="northern lights over a fjord at lauklines, norway"
+		/>
+	</picture>
 	<div class="topbar torn-bottom">
 		<div class="wrap">
 			<PublicNav home="/" links={[{ href: '/hackathon#rules', label: 'rules' }]} label={data.label} />
@@ -19,13 +30,17 @@
 	</div>
 	<header class="submit-hero">
 		<div class="wrap">
-			<h1 class="ask">Do you want to join the Northern Challenge?</h1>
+			<h1 class="ask">do you want to join the northern challenge?</h1>
 		</div>
 	</header>
 	<main class="wrap formwrap">
 		<form class="formcard paper join-ask" method="POST">
 			{#if form?.error}<p class="banner strip torn">{form.error}</p>{/if}
-			<p>ten days online, Nov 27 to Dec 6. you can set up a project now, or come back to it.</p>
+			<p>ten days online, nov 27 to dec 6. you can set up a project now, or come back to it.</p>
+			<p class="prizes">
+				top 5 projects, each, get a $300 flight stipend to norway. voted by HQ. unlocks when you buy your ticket.
+				ship 5+ hours, get the cap.
+			</p>
 			<div class="ask">
 				<button class="btn stampbtn inkstamp stamp" name="choice" value="in" type="submit">yes</button>
 				<button class="later-btn" name="choice" value="later" type="submit">not now</button>
@@ -36,9 +51,13 @@
 
 <style>
 	.join-ask p {
-		margin: 0 0 22px;
+		margin: 0 0 16px;
 		font-family: var(--times);
 		font-size: 24px;
+	}
+
+	.join-ask .prizes {
+		font-size: 22px;
 	}
 
 	.ask {
