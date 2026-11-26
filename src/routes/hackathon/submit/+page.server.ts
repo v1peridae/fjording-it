@@ -4,7 +4,7 @@ import { seal } from '#lib/server/admin-auth.ts';
 import { northernPageAllowed, currentParticipant } from '#lib/server/participant.ts';
 import { appDatabase, DatabaseUnconfigured } from '#lib/server/app-db.ts';
 import { databaseConfigured } from '#lib/server/app-db.ts';
-import { formatHours, hackatimeCredentials } from '#lib/server/hackatime.ts';
+import { hackatimeCredentials, hoursLine } from '#lib/server/hackatime.ts';
 import { liveProjects } from '#lib/server/live-projects.ts';
 import { refreshPerson } from '#lib/server/coding-dau.ts';
 import {
@@ -72,11 +72,10 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 			hackatimeProject: owned.hackatimeProject
 		}).catch(() => 'failed' as const);
 		const seconds = await codingSecondsInWindow(await appDatabase(), participant.id).catch(() => null);
-		tracker = {
-			hours: seconds == null ? '' : formatHours(seconds),
-			eligible: seconds != null && hoursEligible(seconds, tester),
-			unknown: seconds == null
-		};
+		const line = hoursLine(seconds, phase === 'early');
+		tracker = { ...line, eligible: !line.unknown && hoursEligible(seconds ?? 0, tester) };
+	} else if (phase === 'early') {
+		tracker = { ...hoursLine(0, true), eligible: false };
 	}
 
 	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');

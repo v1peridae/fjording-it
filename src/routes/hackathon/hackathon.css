@@ -945,6 +945,11 @@ body:has(.hackathon) {
 	color: var(--cream);
 }
 
+.hackathon .submit-hero h1.ask {
+	font-size: clamp(40px, 7vw, 72px);
+	max-width: 16ch;
+}
+
 .hackathon .submit-hero .sub {
 	display: inline-block;
 	margin-top: 26px;
@@ -1061,6 +1066,25 @@ body:has(.hackathon) {
 
 .hackathon .full {
 	grid-column: 1 / -1;
+}
+
+.hackathon .join {
+	margin-top: 22px;
+}
+
+.hackathon .join button {
+	background: var(--kiwi);
+	color: var(--ink);
+	border: 0;
+	font-family: var(--display);
+	font-size: 26px;
+	padding: 14px 18px;
+	cursor: pointer;
+}
+
+.hackathon .pick.all {
+	max-height: 360px;
+	overflow: auto;
 }
 
 .hackathon .pick {

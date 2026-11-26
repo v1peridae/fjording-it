@@ -1,14 +1,33 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { codingWindow, secondsOnDay, spansFromPayload } from '../src/lib/coding-days.ts';
-import { arrangeHackatimeProjects } from '../src/lib/hackatime-projects.ts';
-import { projectsFromPayload } from '../src/lib/server/hackatime.ts';
-import { displayName, identityFromClaims, identityFromMe, participantAfterLogin } from '../src/lib/participant-identity.ts';
+import { allHackatimeProjects, arrangeHackatimeProjects } from '../src/lib/hackatime-projects.ts';
+import { hoursLine, projectsFromPayload } from '../src/lib/server/hackatime.ts';
+import { afterSignIn, displayName, identityFromClaims, identityFromMe, participantAfterLogin } from '../src/lib/participant-identity.ts';
 
 test('sign-in lands on the hackathon page', () => {
 	assert.equal(participantAfterLogin(true), '/hackathon');
 	assert.equal(participantAfterLogin(true, true), '/hackathon/start');
 	assert.equal(participantAfterLogin(false), '/hackathon?signin=failed');
+});
+
+test('homepage sign-in asks before setup, and a hackathon sign-in does not', () => {
+	assert.equal(afterSignIn({ ok: true, from: '/', choice: null, hasProject: false }), '/hackathon/join');
+	assert.equal(afterSignIn({ ok: true, from: '/', choice: 'in', hasProject: false }), '/hackathon/start');
+	assert.equal(afterSignIn({ ok: true, from: '/', choice: 'later', hasProject: false }), '/hackathon');
+	assert.equal(afterSignIn({ ok: true, from: '/hackathon', choice: null, hasProject: false }), '/hackathon/start');
+	assert.equal(afterSignIn({ ok: true, from: '/hackathon/submit', choice: null, hasProject: true }), '/hackathon');
+	assert.equal(afterSignIn({ ok: false, from: '/', choice: null, hasProject: false }), '/hackathon?signin=failed');
+});
+
+test('the setup list keeps short projects, and the tracker is zero before kickoff', () => {
+	const listed = allHackatimeProjects([
+		{ name: 'short', seconds: 100, hours: '1m', eligible: false },
+		{ name: 'long', seconds: 20000, hours: '5h 33m', eligible: true }
+	]);
+	assert.deepEqual(listed.map((project) => project.name), ['long', 'short']);
+	assert.deepEqual(hoursLine(null, true), { hours: '0m', unknown: false });
+	assert.equal(hoursLine(null, false).unknown, true);
 });
 
 test('the hack club name is trimmed and not rebuilt from first and last', () => {

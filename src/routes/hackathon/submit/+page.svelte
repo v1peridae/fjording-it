@@ -98,7 +98,7 @@
 			{/if}
 			{#if !data.participant}
 				<p class="sub">sign in with hack club, then connect hackatime and pick a project.</p>
-				<p class="ship"><a class="btn stampbtn inkstamp stamp" href="/hackathon/auth/login">sign in</a></p>
+				<p class="ship"><a class="btn stampbtn inkstamp stamp" href="/hackathon/auth/login?from=/hackathon/submit">sign in</a></p>
 			{:else}
 			<fieldset disabled={!data.allowed}>
 				<div class="fields">

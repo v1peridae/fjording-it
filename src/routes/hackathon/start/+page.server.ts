@@ -15,7 +15,7 @@ export const prerender = false;
 export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	setHeaders({ 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' });
 	const participant = await currentParticipant(cookies, url);
-	if (!participant) redirect(303, '/hackathon/auth/login');
+	if (!participant) redirect(303, '/hackathon/auth/login?from=/hackathon/start');
 	if (databaseConfigured()) {
 		const existing = await participantProject(await appDatabase(), participant.id).catch(() => null);
 		if (existing) redirect(303, '/hackathon');
@@ -51,7 +51,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 export const actions: Actions = {
 	default: async ({ request, cookies, url }) => {
 		const participant = await currentParticipant(cookies, url);
-		if (!participant) redirect(303, '/hackathon/auth/login');
+		if (!participant) redirect(303, '/hackathon/auth/login?from=/hackathon/start');
 		const data = await request.formData();
 		const name = cleanProjectName(String(data.get('project') ?? ''));
 		const story = cleanDescription(String(data.get('description') ?? ''));

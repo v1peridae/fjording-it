@@ -113,7 +113,14 @@ export async function openSession(token: string, secret: string, now = Date.now(
 	return claims?.email ?? null;
 }
 
-export type OauthAttempt = { state: string; nonce: string; exp: number; next?: string; expectedEmail?: string };
+export type OauthAttempt = {
+	state: string;
+	nonce: string;
+	exp: number;
+	next?: string;
+	expectedEmail?: string;
+	from?: string;
+};
 
 export async function sealOauth(attempt: OauthAttempt, secret: string): Promise<string> {
 	return seal(attempt, secret);
@@ -127,7 +134,15 @@ export async function openOauth(token: string, secret: string, now = Date.now())
 	if (!state || !nonce || exp <= now) return null;
 	const next = typeof data.next === 'string' ? data.next : undefined;
 	const expectedEmail = typeof data.expectedEmail === 'string' ? data.expectedEmail : undefined;
-	return { state, nonce, exp, ...(next ? { next } : {}), ...(expectedEmail ? { expectedEmail } : {}) };
+	const from = typeof data.from === 'string' ? data.from : undefined;
+	return {
+		state,
+		nonce,
+		exp,
+		...(next ? { next } : {}),
+		...(expectedEmail ? { expectedEmail } : {}),
+		...(from ? { from } : {})
+	};
 }
 
 export function sameToken(a: string, b: string): boolean {

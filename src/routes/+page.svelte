@@ -10,9 +10,20 @@
 	<meta name="description" content="40 teens will be in a fjord in norway this april" />
 </svelte:head>
 
-<main class="flex min-h-dvh p-4">
+<main class="flex min-h-dvh items-center justify-center overflow-x-clip px-3 py-6 md:p-6">
+	<div class="flex w-full max-w-[1120px] flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-5">
+	<a class="ferry paper" href="/hackathon?from=/">
+		<img
+			src="/tromso-aurora.webp"
+			alt="northern lights over Tromsø, Norway"
+			width="1800"
+			height="1198"
+		/>
+		<span class="font-times">The Northern Challenge</span>
+		<span class="font-pirate-3d">Win a $300 flight stipend NOW</span>
+	</a>
 	<div
-		class="@container relative isolate m-auto flex w-full flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:w-[min(1000px,100%)] md:p-8"
+		class="@container relative isolate flex w-full min-w-0 flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:w-[min(760px,100%)] md:flex-1 md:p-8"
 	>
 		<div class="relative flex items-center md:mt-[5cqw] md:h-[13cqw]">
 			<h1
@@ -24,20 +35,6 @@
 				class="absolute top-[15.5cqw] right-[0.9cqw] font-times text-[3.1cqw] tracking-[-0.05em] whitespace-nowrap md:top-[10cqw] md:right-[0.5cqw] md:text-[max(1.8cqw,12px)]"
 			>hack club</span>
 		</div>
-		<a
-			href="/hackathon"
-			class="mt-5 flex w-[min(100%,520px)] flex-col border-2 border-ink bg-ink px-4 py-3 text-cream no-underline md:mt-[1.4cqw] md:w-[62cqw]"
-		>
-			<span class="font-times text-[15px] md:text-[max(1.4cqw,13px)]">The Northern Challenge</span>
-			<span class="font-pirate-3d text-[26px] leading-tight md:text-[max(2.6cqw,20px)]">Win a $300 flight stipend NOW</span>
-		</a>
-		<img
-			src="/tromso-aurora.webp"
-			alt="northern lights over Tromsø, Norway"
-			width="1280"
-			height="852"
-			class="mt-2 h-44 w-[min(100%,520px)] object-cover md:mt-[0.6cqw] md:h-[16cqw] md:w-[62cqw]"
-		/>
 		<p class="mt-3 text-center text-[24px] text-balance md:mt-[1.1cqw] md:h-[3cqw] md:text-[4cqw]">
 			40 teens will be in a
 			<a
@@ -108,4 +105,48 @@
 		<p class="mt-10 text-center font-literatura text-[12px] font-bold tracking-[0.03em] text-balance italic md:text-[max(1.2cqw,11px)]"
 		>made with love by @guac, @johnny and @lou from hack club</p>
 	</div>
+	</div>
 </main>
+
+<style>
+	.ferry {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		width: min(86%, 300px);
+		padding: 22px 16px 26px;
+		color: #07160a;
+		text-decoration: none;
+		transform: rotate(-3deg);
+	}
+
+	.ferry img {
+		width: 100%;
+		height: 128px;
+		object-fit: cover;
+		object-position: center 40%;
+	}
+
+	.ferry .font-times {
+		font-size: 16px;
+		line-height: 1.15;
+	}
+
+	.ferry .font-pirate-3d {
+		font-size: 28px;
+		line-height: 1.05;
+	}
+
+	@media (min-width: 51.3125rem) {
+		.ferry {
+			width: 248px;
+			flex: none;
+			margin-top: 36px;
+			transform: rotate(-8deg);
+		}
+
+		.ferry img {
+			height: 150px;
+		}
+	}
+</style>

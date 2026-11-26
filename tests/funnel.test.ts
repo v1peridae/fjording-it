@@ -12,6 +12,7 @@ test('the funnel query reads participants, hackatime, and northern submissions',
 
 	const counts = funnelFromRow({
 		signed_up: '4',
+		opted_in: 3,
 		connected: 2,
 		added_project: 2,
 		submitted: 3,
@@ -24,7 +25,8 @@ test('the funnel query reads participants, hackatime, and northern submissions',
 		funnel.stages.map((stage) => [stage.label, stage.count, stage.ofPrevious, stage.ofSignups]),
 		[
 			['signed up', 4, null, 100],
-			['connected hackatime', 2, 50, 50],
+			['opted in', 3, 75, 75],
+			['connected hackatime', 2, 66.7, 50],
 			['added a project', 2, 100, 50],
 			['submitted', 3, 150, 75],
 			['approved', 1, 33.3, 25]
@@ -37,7 +39,7 @@ test('an empty database stays at zero without a percent', () => {
 	assert.equal(funnel.approvedHours, 0);
 	assert.deepEqual(
 		funnel.stages.map((stage) => stage.count),
-		[0, 0, 0, 0, 0]
+		[0, 0, 0, 0, 0, 0]
 	);
 	assert.ok(funnel.stages.every((stage) => stage.ofSignups == null));
 	assert.equal(funnel.stages[0].ofPrevious, null);

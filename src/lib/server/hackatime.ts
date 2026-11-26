@@ -175,6 +175,13 @@ function projectList(json: unknown): unknown[] | null {
 	return null;
 }
 
+/** Before kickoff, a missing read is zero hours in the window, not a blank line. */
+export function hoursLine(seconds: number | null, beforeKickoff: boolean): { hours: string; unknown: boolean } {
+	if (seconds == null && beforeKickoff) return { hours: formatHours(0), unknown: false };
+	if (seconds == null) return { hours: '', unknown: true };
+	return { hours: formatHours(seconds), unknown: false };
+}
+
 export function formatHours(totalSeconds: number): string {
 	const safe = Number.isFinite(totalSeconds) ? Math.max(0, totalSeconds) : 0;
 	const hours = Math.floor(safe / 3600);
