@@ -2,7 +2,8 @@ import { error, fail } from '@sveltejs/kit';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView, enforceOwner } from '#lib/server/admin.ts';
 import { listReviewerAudit, listReviewers, removeReviewer, reviewerStats, saveReviewer } from '#lib/server/northern-store.ts';
-import { isStage, median, type Stage } from '#lib/review-pipeline.ts';
+import { reviewerAssignment } from '#lib/reviewer-access.ts';
+import { median } from '#lib/review-pipeline.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -64,12 +65,10 @@ export const actions: Actions = {
 		enforceOwner(admin.status, url);
 		if (admin.status !== 'in') error(404, 'Not Found');
 		const data = await request.formData();
-		const email = String(data.get('email') ?? '').trim().toLowerCase();
-		const stages = ['first_pass', 'fraud', 'hq'].filter((stage) => data.get(stage) === 'on' && isStage(stage)) as Stage[];
-		if (!email.endsWith('@hackclub.com') || stages.length === 0) {
-			return fail(400, { error: 'need a hack club email and at least one stage' });
-		}
-		await withTransaction((db) => saveReviewer(db, admin.email, email, stages));
+		const picked = ['first_pass', 'fraud', 'hq'].filter((stage) => data.get(stage) === 'on');
+		const assignment = reviewerAssignment(String(data.get('email') ?? ''), picked);
+		if ('error' in assignment) return fail(400, { error: assignment.error, email: String(data.get('email') ?? '') });
+		await withTransaction((db) => saveReviewer(db, admin.email, assignment.email, assignment.stages));
 	},
 	remove: async ({ request, cookies, url }) => {
 		const admin = await currentAdminView(cookies, url);

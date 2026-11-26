@@ -54,7 +54,7 @@
 				</div>
 				<div class="band-meta torn">
 					{#if data.view === 'ready'}
-						<strong>{data.reviewers.length}</strong> active reviewers · hack club emails
+						<strong>{data.reviewers.length}</strong> active reviewers
 					{:else}
 						database is not configured
 					{/if}
@@ -74,8 +74,8 @@
 							<span class="sub">invite by email</span>
 						</div>
 						<div class="field">
-							<label for="rev-email">Reviewer email <span class="hint-tag">hack club</span></label>
-							<input id="rev-email" name="email" type="email" required placeholder="name@hackclub.com" />
+							<label for="rev-email">Reviewer email</label>
+							<input id="rev-email" name="email" type="email" required placeholder="name@example.com" value={form?.email ?? ''} />
 						</div>
 						<div class="field">
 							<p style="margin:0 0 5px">Allowed review stages</p>
