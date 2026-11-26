@@ -191,8 +191,8 @@
 
 <section class="card-cream chart">
 	<div class="sec-head">
-		<h2>sign-ups over time</h2>
-		<span class="sub">each day, and the running total. eastern time. <a href="/admin/stats">sign-up list →</a></span>
+		<h2>waitlist emails over time</h2>
+		<span class="sub">each day, and the running total. eastern time. <a href="/admin/stats">waitlist →</a></span>
 	</div>
 	{#if 'error' in signups}
 		<p>{signups.error}</p>

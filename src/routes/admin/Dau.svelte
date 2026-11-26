@@ -23,9 +23,9 @@
 <section class="dau" aria-label="Coding activity">
 	<div class="sec-head">
 		<h2>coding activity</h2>
-		<span class="sub">{today} coding today</span>
+		<span class="sub">{today} daily active coders (coded on their connected project today)</span>
 	</div>
-	<p class="totals">{signups} sign-ups · {onboarded} finished onboarding</p>
+	<p class="totals">{signups} challenge accounts · {onboarded} finished onboarding</p>
 	{#if empty}
 		<p>no coding time on a linked project in this window yet.</p>
 	{/if}

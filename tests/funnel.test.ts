@@ -8,7 +8,8 @@ test('the funnel query reads participants, hackatime, and northern submissions',
 	assert.match(FUNNEL_SQL, /challenge = 'northern'/);
 	assert.match(FUNNEL_SQL, /status = 'confirmed'/);
 	assert.match(FUNNEL_SQL, /override_hours/);
-	assert.doesNotMatch(FUNNEL_SQL, /test/i);
+	assert.match(FUNNEL_SQL, /is_test = false/);
+	assert.doesNotMatch(FUNNEL_SQL, /from\s+test\b/i);
 
 	const counts = funnelFromRow({
 		signed_up: '4',
@@ -24,7 +25,7 @@ test('the funnel query reads participants, hackatime, and northern submissions',
 	assert.deepEqual(
 		funnel.stages.map((stage) => [stage.label, stage.count, stage.ofPrevious, stage.ofSignups]),
 		[
-			['signed up', 4, null, 100],
+			['challenge accounts', 4, null, 100],
 			['opted in', 3, 75, 75],
 			['connected hackatime', 2, 66.7, 50],
 			['added a project', 2, 100, 50],

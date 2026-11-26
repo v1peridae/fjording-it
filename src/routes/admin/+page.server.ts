@@ -9,7 +9,7 @@ import { beginHackClubLogin, currentAdminView, signOutAdmin, takeFlash } from '#
 import { appDatabase, databaseConfigured } from '#lib/server/app-db.ts';
 import { codingWindow, etDayKey } from '#lib/coding-days.ts';
 import { refreshCodingDays } from '#lib/server/coding-dau.ts';
-import { codingSnapshot, listReviewers, loadAdminHome, loadParticipantFunnel, reviewerStats } from '#lib/server/northern-store.ts';
+import { codingSnapshot, flagTesterSubmissions, listReviewers, loadAdminHome, loadParticipantFunnel, reviewerStats } from '#lib/server/northern-store.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -57,6 +57,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	}
 	try {
 		const db = await appDatabase();
+		await flagTesterSubmissions(db, privateEnv('PRESUBMIT_TESTER_EMAILS')).catch(() => undefined);
 		const home = await loadAdminHome(db);
 		const funnel = await loadParticipantFunnel(db);
 		const refresh = await refreshCodingDays(db).catch(() => ({ checked: 0, failed: 0 }));

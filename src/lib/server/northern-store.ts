@@ -319,13 +319,14 @@ export async function insertSubmission(
 		hackatimeSeconds: number;
 		participantId?: number | null;
 		hackatimeUserId?: string | null;
+		isTest?: boolean;
 	}
 ): Promise<number> {
 	const { rows } = await db.query(
 		`INSERT INTO submissions
 			(challenge, email, project_name, description, repo_url, demo_url, screenshot, screenshot_type,
-			 hackatime_project, hackatime_seconds, participant_id, hackatime_user_id)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+			 hackatime_project, hackatime_seconds, participant_id, hackatime_user_id, is_test)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 		 RETURNING id`,
 		[
 			row.challenge,
@@ -339,10 +340,25 @@ export async function insertSubmission(
 			row.hackatimeProject,
 			row.hackatimeSeconds,
 			row.participantId ?? null,
-			row.hackatimeUserId ?? null
+			row.hackatimeUserId ?? null,
+			row.isTest === true
 		]
 	);
 	return Number(rows[0]?.id);
+}
+
+/** Flags rows whose email is on the tester allowlist. Does not delete them. */
+export async function flagTesterSubmissions(db: Sql, allowlist: string | undefined) {
+	const emails = (allowlist ?? '')
+		.split(',')
+		.map((item) => item.trim().toLowerCase())
+		.filter(Boolean);
+	if (!emails.length) return;
+	await db.query(
+		`UPDATE submissions SET is_test = true
+		 WHERE is_test = false AND lower(email) = ANY($1::text[])`,
+		[emails]
+	);
 }
 
 export class HackatimeProjectTaken extends Error {
@@ -483,7 +499,8 @@ export async function getSubmission(db: Sql, id: number) {
 		overrideHours: row.override_hours == null ? null : Number(row.override_hours),
 		stage: String(row.stage) as PipelineStage,
 		status: String(row.status),
-		createdAt: new Date(String(row.created_at)).toISOString()
+		createdAt: new Date(String(row.created_at)).toISOString(),
+		isTest: row.is_test === true
 	};
 }
 
@@ -773,13 +790,13 @@ export async function loadAdminHome(db: Sql) {
 		db.query(`SELECT slug, name FROM challenges ORDER BY starts_at`),
 		db.query(
 			`SELECT id, created_at, challenge, stage, status, email, project_name, hackatime_seconds, override_hours
-			 FROM submissions`
+			 FROM submissions WHERE is_test = false`
 		),
 		db.query(
 			`SELECT DISTINCT ON (r.submission_id) r.submission_id, r.created_at,
 			        COALESCE(s.override_hours, s.hackatime_seconds / 3600.0) AS hours
 			 FROM submission_reviews r
-			 JOIN submissions s ON s.id = r.submission_id
+			 JOIN submissions s ON s.id = r.submission_id AND s.is_test = false
 			 WHERE r.decision = 'confirmed'
 			 ORDER BY r.submission_id, r.created_at DESC`
 		),
@@ -799,7 +816,10 @@ export async function loadAdminHome(db: Sql) {
 		db.query(`SELECT created_at, reviewer_email FROM submission_reviews`),
 		db.query(
 			`SELECT status, count(*)::int AS count FROM (
-				SELECT DISTINCT ON (submission_id) status FROM airtable_outbox ORDER BY submission_id, id DESC
+				SELECT DISTINCT ON (o.submission_id) o.status
+				FROM airtable_outbox o
+				JOIN submissions s ON s.id = o.submission_id AND s.is_test = false
+				ORDER BY o.submission_id, o.id DESC
 			) latest GROUP BY status`
 		)
 	]);

@@ -178,7 +178,8 @@ export const actions: Actions = {
 				screenshot: bytes,
 				screenshotType: kind === 'png' ? 'image/png' : kind === 'jpg' ? 'image/jpeg' : 'image/webp',
 				hackatimeProject: owned.hackatimeProject,
-				hackatimeSeconds: seconds ?? 0
+				hackatimeSeconds: seconds ?? 0,
+				isTest: tester
 			});
 		} catch (err) {
 			if (err instanceof DatabaseUnconfigured) return fail(500, { ...values, error: 'database is not configured' });

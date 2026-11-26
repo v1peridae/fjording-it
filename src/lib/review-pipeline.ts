@@ -45,6 +45,16 @@ export function airtableEligible(stage: PipelineStage, status: string): boolean 
 	return stage === 'done' && status === 'confirmed';
 }
 
+/** Testers may be confirmed under 5 hours. Everyone else needs 5 approved hours. */
+export function confirmAllowed(options: {
+	hackatimeSeconds: number;
+	overrideHours: number | null;
+	tester: boolean;
+}): boolean {
+	if (options.tester) return true;
+	return approvedHours(options.hackatimeSeconds, options.overrideHours) >= 5;
+}
+
 /** Approved hours are the override when a reviewer set one, otherwise Hackatime hours. */
 export function approvedHours(hackatimeSeconds: number, overrideHours: number | null): number {
 	if (overrideHours != null && Number.isFinite(overrideHours)) return overrideHours;

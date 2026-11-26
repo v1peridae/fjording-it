@@ -30,11 +30,12 @@ SELECT
 	  WHERE EXISTS (
 	    SELECT 1 FROM submissions s
 	    WHERE s.challenge = 'northern'
+	      AND s.is_test = false
 	      AND (s.participant_id = p.id OR lower(s.email) = lower(p.email))
 	  )) AS added_project,
-	(SELECT count(*)::int FROM submissions WHERE challenge = 'northern') AS submitted,
+	(SELECT count(*)::int FROM submissions WHERE challenge = 'northern' AND is_test = false) AS submitted,
 	(SELECT count(*)::int FROM submissions
-	  WHERE challenge = 'northern' AND status = 'confirmed') AS approved,
+	  WHERE challenge = 'northern' AND status = 'confirmed' AND is_test = false) AS approved,
 	(SELECT COALESCE(sum(
 	    CASE
 	      WHEN override_hours IS NOT NULL THEN override_hours
@@ -42,7 +43,7 @@ SELECT
 	    END
 	  ), 0)
 	  FROM submissions
-	  WHERE challenge = 'northern' AND status = 'confirmed') AS approved_hours
+	  WHERE challenge = 'northern' AND status = 'confirmed' AND is_test = false) AS approved_hours
 `;
 
 export function funnelFromRow(row: Record<string, unknown>): FunnelCounts {
@@ -59,7 +60,7 @@ export function funnelFromRow(row: Record<string, unknown>): FunnelCounts {
 
 export function funnelStages(counts: FunnelCounts): { stages: FunnelStage[]; approvedHours: number } {
 	const rows: { key: string; label: string; count: number }[] = [
-		{ key: 'signed_up', label: 'signed up', count: counts.signedUp },
+		{ key: 'signed_up', label: 'challenge accounts', count: counts.signedUp },
 		{ key: 'opted_in', label: 'opted in', count: counts.optedIn },
 		{ key: 'connected', label: 'connected hackatime', count: counts.connected },
 		{ key: 'project', label: 'added a project', count: counts.addedProject },
