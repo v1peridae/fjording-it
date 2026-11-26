@@ -14,6 +14,9 @@ export const KICKOFF: WallTime = { year: 2026, month: 11, day: 27, hour: 0, minu
 /** Sun Dec 6, 2026, 11:59 PM America/New_York. */
 export const DEADLINE: WallTime = { year: 2026, month: 12, day: 6, hour: 23, minute: 59 };
 
+export const CHALLENGE_SPAN = 'Nov 27 to Dec 6';
+export const CHALLENGE_CLOSES = 'closes Sun Dec 6 at 11:59pm ET';
+
 export function zonedWallTime(time: WallTime, timeZone = ET): Date {
 	let utc = Date.UTC(time.year, time.month - 1, time.day, time.hour, time.minute, 0);
 	const fmt = new Intl.DateTimeFormat('en-US', {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ago, checkLabel, waitAge } from '#lib/admin-charts.ts';
 	import AdminNav from '#lib/AdminNav.svelte';
+	import Dau from './Dau.svelte';
 	import Funnel from './Funnel.svelte';
 	import HomeCharts from './HomeCharts.svelte';
 	import type { PageProps } from './$types';
@@ -133,6 +134,16 @@
 					</div>
 				</section>
 
+				{#if data.dau}
+					<Dau
+						today={data.dau.today}
+						days={data.dau.days}
+						signups={data.dau.signups}
+						onboarded={data.dau.onboarded}
+						empty={data.dau.empty}
+						refreshFailed={data.dau.refreshFailed}
+					/>
+				{/if}
 				{#if data.funnel}
 					<Funnel stages={data.funnel.stages} approvedHours={data.funnel.approvedHours} />
 				{:else}

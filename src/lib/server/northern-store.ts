@@ -135,6 +135,113 @@ export async function upsertParticipant(db: Sql, identity: ParticipantIdentity):
 	return mapParticipant(rows[0]);
 }
 
+export type StarterProject = {
+	id: number;
+	name: string;
+	description: string;
+	hackatimeProject: string;
+};
+
+export async function participantProject(db: Sql, participantId: number): Promise<StarterProject | null> {
+	const { rows } = await db.query(
+		`SELECT id, name, description, hackatime_project FROM participant_projects WHERE participant_id = $1`,
+		[participantId]
+	);
+	const row = rows[0];
+	if (!row) return null;
+	return {
+		id: Number(row.id),
+		name: String(row.name),
+		description: String(row.description),
+		hackatimeProject: String(row.hackatime_project)
+	};
+}
+
+export async function saveParticipantProject(
+	db: Sql,
+	input: { participantId: number; name: string; description: string; hackatimeProject: string }
+) {
+	await db.query(
+		`INSERT INTO participant_projects (participant_id, name, description, hackatime_project)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (participant_id) DO UPDATE SET
+		   name = excluded.name,
+		   description = excluded.description,
+		   hackatime_project = excluded.hackatime_project`,
+		[input.participantId, input.name, input.description, input.hackatimeProject]
+	);
+}
+
+export async function codingSnapshot(db: Sql, today: string) {
+	const window = await db.query(
+		`SELECT day::text AS day,
+		        count(*) FILTER (WHERE seconds > 0)::int AS people,
+		        COALESCE(sum(seconds), 0)::int AS seconds
+		 FROM coding_days
+		 WHERE day BETWEEN '2026-11-27' AND '2026-12-06'
+		 GROUP BY day`
+	);
+	const todayCount = await db.query(
+		`SELECT count(*)::int AS count FROM coding_days WHERE day = $1::date AND seconds > 0`,
+		[today]
+	);
+	const signups = await db.query(`SELECT count(*)::int AS count FROM participants`);
+	const onboarded = await db.query(`SELECT count(*)::int AS count FROM participant_projects`);
+	return {
+		rows: window.rows.map((row) => ({
+			day: String(row.day).slice(0, 10),
+			people: Number(row.people),
+			seconds: Number(row.seconds)
+		})),
+		today: Number(todayCount.rows[0]?.count ?? 0),
+		signups: Number(signups.rows[0]?.count ?? 0),
+		onboarded: Number(onboarded.rows[0]?.count ?? 0)
+	};
+}
+
+export async function codingSecondsInWindow(db: Sql, participantId: number): Promise<number | null> {
+	const { rows } = await db.query(
+		`SELECT COALESCE(sum(seconds), 0)::int AS seconds, count(*)::int AS n
+		 FROM coding_days
+		 WHERE participant_id = $1 AND day BETWEEN '2026-11-27' AND '2026-12-06'`,
+		[participantId]
+	);
+	if (!rows[0] || Number(rows[0].n) === 0) return null;
+	return Number(rows[0].seconds);
+}
+
+export async function codingFetchedAt(db: Sql, participantId: number): Promise<number | null> {
+	const { rows } = await db.query(`SELECT max(fetched_at) AS at FROM coding_days WHERE participant_id = $1`, [participantId]);
+	const at = rows[0]?.at;
+	if (!at) return null;
+	const time = new Date(String(at)).getTime();
+	return Number.isFinite(time) ? time : null;
+}
+
+export async function saveCodingDays(db: Sql, participantId: number, days: { day: string; seconds: number }[]) {
+	for (const day of days) {
+		await db.query(
+			`INSERT INTO coding_days (participant_id, day, seconds, fetched_at)
+			 VALUES ($1, $2::date, $3, now())
+			 ON CONFLICT (participant_id, day) DO UPDATE SET seconds = excluded.seconds, fetched_at = now()`,
+			[participantId, day.day, day.seconds]
+		);
+	}
+}
+
+export async function linkedProjects(db: Sql) {
+	const { rows } = await db.query(
+		`SELECT p.id, p.email, pp.hackatime_project
+		 FROM participant_projects pp
+		 JOIN participants p ON p.id = pp.participant_id`
+	);
+	return rows.map((row) => ({
+		participantId: Number(row.id),
+		email: String(row.email),
+		hackatimeProject: String(row.hackatime_project)
+	}));
+}
+
 export async function participantByHackClubId(db: Sql, hackClubId: string): Promise<ParticipantRow | null> {
 	const { rows } = await db.query(`SELECT * FROM participants WHERE hack_club_id = $1`, [hackClubId]);
 	return rows[0] ? mapParticipant(rows[0]) : null;

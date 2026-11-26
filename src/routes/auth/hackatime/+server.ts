@@ -42,8 +42,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		});
 	}
 
+	const backTo = url.searchParams.get('from') === 'start' ? '/hackathon/start' : '/hackathon/submit';
 	const state = randomToken();
-	cookies.set(STATE_COOKIE, await seal({ state, email, exp: Date.now() + 10 * 60 * 1000 }, sessionSecret), {
+	cookies.set(STATE_COOKIE, await seal({ state, email, back: backTo, exp: Date.now() + 10 * 60 * 1000 }, sessionSecret), {
 		path: '/auth/hackatime',
 		httpOnly: true,
 		sameSite: 'lax',

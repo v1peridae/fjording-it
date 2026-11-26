@@ -27,8 +27,9 @@ export type ParticipantIdentity = {
  */
 export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
 
-export function participantAfterLogin(ok: boolean): string {
-	return ok ? '/hackathon' : '/hackathon?signin=failed';
+export function participantAfterLogin(ok: boolean, needsOnboarding = false): string {
+	if (!ok) return '/hackathon?signin=failed';
+	return needsOnboarding ? '/hackathon/start' : '/hackathon';
 }
 
 /** Missing birthday or address is unknown. A recorded value never blocks sign-in or submission. */

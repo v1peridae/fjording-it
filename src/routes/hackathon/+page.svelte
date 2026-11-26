@@ -23,7 +23,7 @@
 
 <svelte:head>
 	<title>fjording it: The Northern Challenge</title>
-	<meta name="description" content="online, fri nov 27, 12:00am ET to sun dec 6, 11:59pm ET." />
+	<meta name="description" content="Nov 27 to Dec 6. closes Sun Dec 6 at 11:59pm ET." />
 	<meta name="robots" content="noindex, nofollow" />
 	<link
 		rel="preload"
@@ -71,7 +71,8 @@
 			<div class="row">
 				<div class="when strip torn">
 					<span class="k">online, 10 days</span>
-					<b><span class="nw">fri nov 27, 12:00am ET</span> → <span class="nw">sun dec 6, 11:59pm ET</span></b>
+					<b>Nov 27 to Dec 6</b>
+					<span class="close">closes Sun Dec 6 at 11:59pm ET</span>
 				</div>
 				<div class="ticket paper" aria-live="polite">
 					<p class="lbl">{view.label}</p>
@@ -90,6 +91,9 @@
 				<p class="banner strip torn">{data.notice}</p>
 			{:else if data.participantLabel}
 				<p class="yourein strip torn">you're in, {data.participantLabel}.</p>
+			{/if}
+			{#if data.needsOnboarding}
+				<p class="remind strip torn">when you're ready, <a href="/hackathon/start">name your project and link Hackatime</a>.</p>
 			{/if}
 		</div>
 	</header>
@@ -137,6 +141,8 @@
 				<dl>
 					<dt>who</dt>
 					<dd>ages 13 to 18, signed up on fjording.hackclub.com</dd>
+					<dt>who picks</dt>
+					<dd>the best projects are chosen by a vote run by Hack Club HQ</dd>
 					<dt>stuck?</dt>
 					<dd>ask in <a class="chan" href="https://hackclub.slack.com/app_redirect?channel=fjording-help">#fjording-help</a></dd>
 				</dl>
@@ -145,4 +151,5 @@
 	</section>
 
 	<div class="foot-space" aria-hidden="true"></div>
+	<a class="submit-fab stamp" href="/hackathon/submit">Submit</a>
 </div>
