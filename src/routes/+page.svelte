@@ -10,8 +10,8 @@
 	<meta name="description" content="40 teens will be in a fjord in norway this april" />
 </svelte:head>
 
-<main class="flex min-h-dvh items-center justify-center overflow-x-clip px-3 py-6 md:p-6">
-	<div class="flex w-full max-w-[1120px] flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-5">
+<main class="relative flex min-h-dvh justify-center overflow-x-clip px-3 py-6 md:px-6 md:py-8">
+	<div class="stage relative w-full md:w-[min(1000px,100%)]">
 	<a class="ferry paper" href="/hackathon?from=/">
 		<img
 			src="/tromso-aurora.webp"
@@ -23,7 +23,7 @@
 		<span class="font-pirate-3d">Win a $300 flight stipend NOW</span>
 	</a>
 	<div
-		class="@container relative isolate flex w-full min-w-0 flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:w-[min(760px,100%)] md:flex-1 md:p-8"
+		class="@container relative isolate flex w-full flex-col items-center px-5 py-14 before:absolute before:inset-y-0 before:inset-x-[1.1%] before:-z-1 before:opacity-90 before:paper md:p-8"
 	>
 		<div class="relative flex items-center md:mt-[5cqw] md:h-[13cqw]">
 			<h1
@@ -113,7 +113,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		width: min(86%, 300px);
+		width: min(86%, 280px);
+		margin: 0 auto 10px;
 		padding: 22px 16px 26px;
 		color: #07160a;
 		text-decoration: none;
@@ -139,10 +140,13 @@
 
 	@media (min-width: 51.3125rem) {
 		.ferry {
-			width: 248px;
-			flex: none;
-			margin-top: 36px;
+			position: absolute;
+			width: 230px;
+			margin: 0;
+			top: 28px;
+			right: calc(100% + 48px);
 			transform: rotate(-8deg);
+			transform-origin: right center;
 		}
 
 		.ferry img {

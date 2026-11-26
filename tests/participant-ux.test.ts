@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { codingWindow, secondsOnDay, spansFromPayload } from '../src/lib/coding-days.ts';
 import { allHackatimeProjects, arrangeHackatimeProjects } from '../src/lib/hackatime-projects.ts';
-import { hoursLine, projectsFromPayload } from '../src/lib/server/hackatime.ts';
+import { fetchHackatimeProjects, HACKATIME_PROJECT_PATHS, hoursLine, projectsFromPayload } from '../src/lib/server/hackatime.ts';
 import { afterSignIn, displayName, identityFromClaims, identityFromMe, participantAfterLogin } from '../src/lib/participant-identity.ts';
 
 test('sign-in lands on the hackathon page', () => {
@@ -68,6 +68,34 @@ test('coding time on a linked project counts for that ET day', () => {
 	assert.equal(window.days[0]?.people, 2);
 	assert.equal(window.days[0]?.hours, 2);
 	assert.equal(window.days.length, 10);
+});
+
+test('the project picker uses the all-time list and skips an empty first response', async () => {
+	assert.ok(HACKATIME_PROJECT_PATHS.every((path) => !path.includes('start_date') && !path.includes('2026-11-27')));
+	const calls: string[] = [];
+	const projects = await fetchHackatimeProjects('token', async (url) => {
+		calls.push(String(url));
+		if (String(url).endsWith('/authenticated/projects')) {
+			return new Response(JSON.stringify({ projects: [] }), { status: 200 });
+		}
+		if (String(url).includes('/users/my/stats')) {
+			return new Response(
+				JSON.stringify({
+					data: {
+						range: 'all_time',
+						projects: [
+							{ name: 'Compsci', total_seconds: 14432 },
+							{ name: 'Boxed-In', total_seconds: 800 }
+						]
+					}
+				}),
+				{ status: 200 }
+			);
+		}
+		return new Response(JSON.stringify({ projects: [] }), { status: 200 });
+	});
+	assert.deepEqual(projects?.map((project) => project.name), ['Compsci', 'Boxed-In']);
+	assert.ok(calls.every((url) => !url.includes('start_date') && !url.includes('2026-11-27')));
 });
 
 test('hackatime project payloads keep the name and the seconds', () => {

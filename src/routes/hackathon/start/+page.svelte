@@ -52,6 +52,9 @@
 							<em class="ok"><a href="/auth/hackatime?ticket={data.ticket}&from=start">connect hackatime</a></em>
 						{:else if data.connected}
 							<em class="ok">hackatime connected ✓</em>
+							{#if data.projects.length === 0 && data.ticket}
+								<em class="ok"><a href="/auth/hackatime?ticket={data.ticket}&from=start">reconnect hackatime</a></em>
+							{/if}
 						{:else}
 							<em>Hackatime not connected yet</em>
 						{/if}
