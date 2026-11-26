@@ -19,6 +19,7 @@ import {
 	formatSignupStats,
 	adminCallbackDecision,
 	isAdminEmail,
+	sameAccountEmail,
 	isAdminEntryEmail,
 	readSignups,
 	signupName,
@@ -92,6 +93,9 @@ test('allowlist defaults to johnny and ignores case and spaces', () => {
 	assert.equal(isAdminEmail('Johnny@HackClub.com', undefined), true);
 	assert.equal(isAdminEmail('ada@hackclub.com', ' johnny@hackclub.com, Ada@HackClub.com '), true);
 	assert.equal(isAdminEmail('ada@hackclub.com', 'johnny@hackclub.com'), false);
+	assert.equal(sameAccountEmail('Johnny@HackClub.com', 'johnny@hackclub.com'), true);
+	assert.equal(sameAccountEmail('johnathanmcphilbin2@gmail.com', 'johnny@hackclub.com'), false);
+	assert.equal(sameAccountEmail('johnny@hackclub.com', ''), true);
 });
 
 test('authorize url is the hack club auth endpoint and keeps the secret off it', () => {
@@ -128,6 +132,8 @@ test('session cookie round-trips and rejects tampering, expiry, and the wrong se
 
 	const oauth = await sealOauth({ state: 'abc', nonce: 'def', exp: 5_000 }, SECRET);
 	assert.deepEqual(await openOauth(oauth, SECRET, 4_000), { state: 'abc', nonce: 'def', exp: 5_000 });
+	const hinted = await sealOauth({ state: 'abc', nonce: 'def', exp: 5_000, expectedEmail: 'johnny@hackclub.com' }, SECRET);
+	assert.equal((await openOauth(hinted, SECRET, 4_000))?.expectedEmail, 'johnny@hackclub.com');
 	assert.equal(await openOauth(oauth, SECRET, 5_000), null);
 	assert.equal(sameToken('abc', 'abc'), true);
 	assert.equal(sameToken('abc', 'abd'), false);

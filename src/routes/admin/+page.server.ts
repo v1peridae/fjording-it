@@ -28,7 +28,14 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		return {
 			view: 'signin' as const,
 			next,
-			error: flash === 'denied' ? 'not authorised' : flash === 'failed' ? "sign-in didn't work, try again" : undefined
+			error:
+				flash === 'denied'
+					? 'not authorised'
+					: flash === 'mismatch'
+						? 'Hack Club signed in a different account than the email in this form. Sign out of Hack Club Auth, then sign in as that email.'
+						: flash === 'failed'
+							? "sign-in didn't work, try again"
+							: undefined
 		};
 	}
 

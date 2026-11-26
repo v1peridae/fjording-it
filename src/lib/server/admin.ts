@@ -14,7 +14,7 @@ import {
 	sealSession,
 	verifiedEmail
 } from './admin-auth';
-import { adminCallbackDecision } from '../signup-stats';
+import { adminCallbackDecision, sameAccountEmail } from '../signup-stats';
 
 async function stagesFor(email: string) {
 	const { reviewerStagesFor } = await import('./access.ts');
@@ -27,7 +27,7 @@ const FLASH_COOKIE = 'admin_flash';
 /** Old path-scoped copies plus the current site-wide cookie. */
 const SESSION_PATHS = [ADMIN_COOKIE_PATH, ...LEGACY_ADMIN_COOKIE_PATHS] as const;
 
-type Flash = 'denied' | 'failed';
+type Flash = 'denied' | 'failed' | 'mismatch';
 
 function cookieOptions(url: URL, maxAge?: number, path = '/admin') {
 	return {
@@ -131,7 +131,7 @@ export function takeFlash(cookies: Cookies, url: URL): Flash | null {
 	const value = cookies.get(FLASH_COOKIE);
 	if (!value) return null;
 	cookies.delete(FLASH_COOKIE, cookieOptions(url));
-	return value === 'denied' || value === 'failed' ? value : null;
+	return value === 'denied' || value === 'failed' || value === 'mismatch' ? value : null;
 }
 
 export function clearFlash(cookies: Cookies, url: URL) {
@@ -154,11 +154,13 @@ export async function beginHackClubLogin(options: {
 		return { error: 'unconfigured' };
 	}
 
+	const hint = options.loginHint?.trim().toLowerCase() || '';
 	const attempt = {
 		state: randomToken(),
 		nonce: randomToken(),
 		exp: Date.now() + OAUTH_MS,
-		...(safeNext(options.next) ? { next: safeNext(options.next)! } : {})
+		...(safeNext(options.next) ? { next: safeNext(options.next)! } : {}),
+		...(hint ? { expectedEmail: hint } : {})
 	};
 	const url = new URL(options.origin);
 	options.cookies.set(OAUTH_COOKIE, await sealOauth(attempt, config.sessionSecret), cookieOptions(url, OAUTH_MS / 1000));
@@ -168,7 +170,8 @@ export async function beginHackClubLogin(options: {
 		redirectUri: callbackUrl(options.origin),
 		state: attempt.state,
 		nonce: attempt.nonce,
-		loginHint: options.loginHint
+		loginHint: options.loginHint,
+		...(hint ? { prompt: 'login' } : {})
 	}), { external: ['https://auth.hackclub.com'] });
 }
 
@@ -209,6 +212,14 @@ export async function finishHackClubLogin(options: {
 			clientId: config.clientId,
 			clientSecret: config.clientSecret
 		});
+
+		const expected = typeof attempt.expectedEmail === 'string' ? attempt.expectedEmail : '';
+		if (!sameAccountEmail(email, expected)) {
+			clearSession(options.cookies, options.url);
+			console.error(`admin sign-in email mismatch: hack club returned ${email}`);
+			setFlash(options.cookies, options.url, 'mismatch');
+			return { status: 'denied', next };
+		}
 
 		const owner = adminCallbackDecision(email, privateEnv('ADMIN_EMAILS')) === 'allow';
 		const reviewer = owner ? false : (await stagesFor(email)).length > 0;

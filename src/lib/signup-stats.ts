@@ -190,6 +190,12 @@ export function isAdminEmail(email: string, allowlist: string | undefined): bool
 	return adminAllowlist(allowlist).has(email.trim().toLowerCase());
 }
 
+/** The address typed on the admin form must be the account Hack Club Auth actually returned. */
+export function sameAccountEmail(verified: string, expected: string | null | undefined): boolean {
+	if (!expected || !expected.trim()) return true;
+	return verified.trim().toLowerCase() === expected.trim().toLowerCase();
+}
+
 /** The public RSVP box starts admin sign-in only for this exact address. */
 export function isAdminEntryEmail(email: string): boolean {
 	return email.trim().toLowerCase() === ADMIN_ENTRY_EMAIL;
