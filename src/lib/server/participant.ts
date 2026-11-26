@@ -72,6 +72,11 @@ export async function currentParticipant(cookies: Cookies, url: URL): Promise<Pa
 	}
 }
 
+export function signOutParticipant(cookies: Cookies, url: URL) {
+	clearCookie(cookies, url, SESSION_COOKIE);
+	clearCookie(cookies, url, OAUTH_COOKIE);
+}
+
 export async function northernPageAllowed(cookies: Cookies, url: URL) {
 	const view = await currentAdminView(cookies, url);
 	if (northernIsPublic(privateEnv('NORTHERN_PUBLIC'))) return { admin: view.status === 'in', view };

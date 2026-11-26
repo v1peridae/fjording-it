@@ -1,24 +1,30 @@
 <script lang="ts">
+	import { arrangeHackatimeProjects } from '#lib/hackatime-projects.ts';
+	import { displayName } from '#lib/participant-identity.ts';
 	import type { PageProps } from './$types';
+	import PublicNav from '../PublicNav.svelte';
 	import '../hackathon.css';
 
 	let { data, form }: PageProps = $props();
 	let picked = $state<string | undefined>(undefined);
 	let shot = $state('');
+	let query = $state('');
 
+	const links = [
+		{ href: '/hackathon#prizes', label: 'prizes' },
+		{ href: '/hackathon#rules', label: 'rules' }
+	];
+	let arranged = $derived(arrangeHackatimeProjects(data.projects));
+	let needle = $derived(query.trim().toLowerCase());
+	let eligible = $derived(arranged.eligible.filter((project) => project.name.toLowerCase().includes(needle)));
+	let later = $derived(arranged.later.filter((project) => project.name.toLowerCase().includes(needle)));
 	let choice = $derived.by(() => {
 		if (picked) return picked;
 		if (form?.hackatime) return form.hackatime;
-		return data.projects.find((project) => project.eligible)?.name ?? '';
+		return arranged.eligible[0]?.name ?? '';
 	});
 	let chosen = $derived(data.projects.find((project) => project.name === choice));
-	let shipAs = $derived(tagHandle(data.github) ?? data.handle);
-
-	function tagHandle(value: string | null): string | null {
-		if (!value) return null;
-		const handle = value.startsWith('@') ? value : `@${value}`;
-		return /^@[A-Za-z0-9._-]{1,31}$/.test(handle) ? handle : null;
-	}
+	let shipAs = $derived(displayName(data.participant?.name) ?? data.participant?.email ?? null);
 
 	function onfile(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
@@ -58,21 +64,7 @@
 
 	<div class="topbar torn-bottom">
 		<div class="wrap">
-			<nav>
-				<a class="mini" href="/hackathon">fjording it</a>
-				<div class="right">
-					<ul>
-						<li><a href="/hackathon#prizes">prizes</a></li>
-						<li><a href="/hackathon#rules">rules</a></li>
-					</ul>
-					{#if shipAs}
-						<span class="tagwrap">
-							<img class="string" src="/hackathon/tag-string.svg" alt="" />
-							<span class="tag"><span class="t">signed in as</span><b>{shipAs}</b></span>
-						</span>
-					{/if}
-				</div>
-			</nav>
+			<PublicNav home="/hackathon" {links} label={shipAs} />
 		</div>
 	</div>
 
@@ -87,8 +79,8 @@
 			<h1>ship your project</h1>
 			<div>
 				<p class="sub strip torn">
-					ship any software project, at least 5 hours long, with a playable url and a github link. closes sun dec 6,
-					11:59pm ET.
+					ship any software project, at least 5 hours long, with a playable url and a github link. opens fri nov 27,
+					12:00am ET. closes sun dec 6, 11:59pm ET.
 				</p>
 			</div>
 		</div>
@@ -96,6 +88,9 @@
 
 	<main class="wrap formwrap">
 		<form class="formcard paper" method="POST" enctype="multipart/form-data">
+			{#if data.phase === 'early'}
+				<p class="banner strip torn">submissions open Nov 27</p>
+			{/if}
 			{#if data.shipped}
 				<p class="banner strip torn">shipped.</p>
 			{/if}
@@ -104,12 +99,6 @@
 			{/if}
 			<div class="formhead">
 				<h2>{data.participant ? 'your project' : 'sign in'}</h2>
-				{#if shipAs}
-					<span class="tagwrap ontag">
-						<img class="string" src="/hackathon/tag-string.svg" alt="" />
-						<span class="tag"><span class="t">shipping as</span><b>{shipAs}</b></span>
-					</span>
-				{/if}
 			</div>
 			{#if !data.participant}
 				<p class="sub">sign in with hack club, then connect hackatime and pick a project.</p>
@@ -143,6 +132,10 @@
 							{/if}
 							{#if !data.relaxHours}<em class="min">5h minimum</em>{/if}
 						</p>
+						{#if data.connected && data.projects.length > 0}
+							<label class="hk-search" for="hk-q">filter projects</label>
+							<input id="hk-q" class="hk-q" type="search" placeholder="filter projects" bind:value={query} />
+						{/if}
 						<div class="pick" role="listbox" aria-labelledby="hk-l">
 							<div class="cur">
 								<span>
@@ -152,7 +145,7 @@
 										Hackatime not connected yet
 									{:else if !data.connected}
 										connect hackatime to choose a project
-									{:else if data.projects.length === 0}
+									{:else if eligible.length === 0 && later.length === 0}
 										no hackatime projects yet
 									{:else}
 										choose a project
@@ -160,26 +153,32 @@
 								</span>
 								<i>▾</i>
 							</div>
-							{#each data.projects as project (project.name)}
-								<label class="opt" class:sel={choice === project.name} class:off={!project.eligible}>
+							{#each eligible as project (project.name)}
+								<label class="opt" class:sel={choice === project.name}>
 									<input
 										type="radio"
 										name="hackatime"
 										value={project.name}
 										checked={choice === project.name}
-										disabled={!project.eligible}
-										required={project.eligible}
+										required
 										onclick={() => (picked = project.name)}
 									/>
-									{#if project.eligible}
-										{project.name} · {project.hours}
-										{#if choice === project.name}<i>✓</i>{/if}
-									{:else}
-										<s>{project.name} · {project.hours}</s>
-										<b class="ne">under 5h, not eligible yet</b>
-									{/if}
+									{project.name} · {project.hours}
+									{#if choice === project.name}<i>✓</i>{/if}
 								</label>
 							{/each}
+							{#if later.length > 0}
+								<details class="later">
+									<summary>not eligible yet ({later.length})</summary>
+									{#each later as project (project.name)}
+										<label class="opt off">
+											<input type="radio" name="hackatime" value={project.name} disabled />
+											<s>{project.name} · {project.hours}</s>
+											<b class="ne">under 5h, not eligible yet</b>
+										</label>
+									{/each}
+								</details>
+							{/if}
 						</div>
 					</div>
 					<div class="f">
