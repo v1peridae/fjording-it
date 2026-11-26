@@ -18,10 +18,11 @@ export const prerender = false;
 
 const STATE_COOKIE = 'hackatime_oauth';
 
-function back(status: string) {
+function back(status: string, next = '/hackathon/submit') {
+	const path = next === '/hackathon/start' ? next : '/hackathon/submit';
 	return new Response(null, {
 		status: 303,
-		headers: { location: `/hackathon/submit?hackatime=${status}` }
+		headers: { location: `${path}?hackatime=${status}` }
 	});
 }
 
@@ -35,7 +36,8 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		secure: url.protocol === 'https:'
 	});
 
-	if (url.searchParams.get('error')) return back('failed');
+	const next = sealed?.back === '/hackathon/start' ? '/hackathon/start' : '/hackathon/submit';
+	if (url.searchParams.get('error')) return back('failed', next);
 
 	const client = hackatimeCredentials({
 		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
@@ -46,7 +48,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const email = typeof sealed?.email === 'string' ? sealed.email : '';
 	const admin = await currentAdminView(cookies, url);
 	const participant = await currentParticipant(cookies, url);
-	if (!northernIsPublic(privateEnv('NORTHERN_PUBLIC')) && admin.status !== 'in') return back('failed');
+	if (!northernIsPublic(privateEnv('NORTHERN_PUBLIC')) && admin.status !== 'in') return back('failed', next);
 	if (
 		!secret ||
 		!client ||
@@ -61,7 +63,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		!state ||
 		!statesMatch(state, sealed.state)
 	) {
-		return back('failed');
+		return back('failed', next);
 	}
 
 	try {
@@ -78,9 +80,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 			tokens,
 			{ id: profile?.id ?? null, githubUsername: profile?.githubUsername ?? null }
 		);
-		return back('connected');
+		return back('connected', next);
 	} catch (err) {
 		console.error('hackatime callback failed');
-		return back('failed');
+		return back('failed', next);
 	}
 };

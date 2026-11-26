@@ -306,6 +306,56 @@ body:has(.hackathon) {
 	line-height: 1.1;
 }
 
+.hackathon .tracker {
+	margin: 0 0 16px;
+	font-family: var(--times);
+	font-size: 22px;
+}
+
+.hackathon .close {
+	font-family: var(--times);
+	font-size: 18px;
+}
+
+.hackathon .remind {
+	margin-top: 14px;
+	font-size: 22px;
+}
+
+.hackathon .remind a {
+	border-bottom: 2px solid var(--kiwi);
+	text-decoration: none;
+}
+
+.hackathon .submit-fab {
+	position: fixed;
+	right: 18px;
+	bottom: 18px;
+	z-index: 30;
+	background: var(--ink);
+	color: var(--cream);
+	text-decoration: none;
+	font-family: var(--display);
+	font-size: 28px;
+	line-height: 1;
+	padding: 14px 22px;
+}
+
+@media (max-width: 480px) {
+	.hackathon .submit-fab {
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		text-align: center;
+		padding: 16px 12px;
+	}
+
+	.hackathon:has(.submit-fab) {
+		padding-bottom: 64px;
+	}
+}
+
 .hackathon .nw {
 	white-space: nowrap;
 }

@@ -4,20 +4,17 @@ import { seal } from '#lib/server/admin-auth.ts';
 import { northernPageAllowed, currentParticipant } from '#lib/server/participant.ts';
 import { appDatabase, DatabaseUnconfigured } from '#lib/server/app-db.ts';
 import { databaseConfigured } from '#lib/server/app-db.ts';
-import {
-	fetchHackatimeProjects,
-	formatHours,
-	hackatimeCredentials,
-	refreshAccessToken,
-	type HackatimeProject
-} from '#lib/server/hackatime.ts';
+import { formatHours, hackatimeCredentials } from '#lib/server/hackatime.ts';
+import { liveProjects } from '#lib/server/live-projects.ts';
+import { refreshPerson } from '#lib/server/coding-dau.ts';
 import {
 	HackatimeProjectTaken,
+	codingSecondsInWindow,
 	insertSubmission,
 	isUniqueViolation,
 	NORTHERN_SLUG,
-	readHackatimeConnection,
-	updateHackatimeTokens
+	participantProject,
+	readHackatimeConnection
 } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import { sniffImage } from '#lib/northern.ts';
@@ -51,19 +48,35 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 
 	let github: string | null = null;
 	let linked = false;
-	let projects: { name: string; seconds: number; hours: string; eligible: boolean }[] = [];
 	let projectsFailed = false;
+	let owned: { name: string; hackatimeProject: string } | null = null;
+	let tracker: { hours: string; eligible: boolean; unknown: boolean } | null = null;
 
+	if (participant && databaseConfigured()) {
+		owned = await participantProject(await appDatabase(), participant.id).catch(() => null);
+	}
 	if (participant && configured && databaseConfigured()) {
 		try {
 			const live = await liveProjects(participant.email, tester);
 			github = live.github;
 			linked = live.linked;
-			projects = live.projects;
 			projectsFailed = live.failed;
 		} catch {
 			projectsFailed = true;
 		}
+	}
+	if (participant && owned && databaseConfigured()) {
+		await refreshPerson(await appDatabase(), {
+			participantId: participant.id,
+			email: participant.email,
+			hackatimeProject: owned.hackatimeProject
+		}).catch(() => 'failed' as const);
+		const seconds = await codingSecondsInWindow(await appDatabase(), participant.id).catch(() => null);
+		tracker = {
+			hours: seconds == null ? '' : formatHours(seconds),
+			eligible: seconds != null && hoursEligible(seconds, tester),
+			unknown: seconds == null
+		};
 	}
 
 	const sessionSecret = privateEnv('ADMIN_SESSION_SECRET');
@@ -86,7 +99,8 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		preview: phase === 'early',
 		configured,
 		connected: linked && !projectsFailed,
-		projects,
+		owned,
+		tracker,
 		projectsFailed,
 		github,
 		ticket,
@@ -106,57 +120,6 @@ function hackatimeNotice(flag: string | null, configured: boolean): string | nul
 	return null;
 }
 
-async function liveProjects(email: string, bypassHours = false): Promise<{
-	github: string | null;
-	linked: boolean;
-	projects: { name: string; seconds: number; hours: string; eligible: boolean }[];
-	failed: boolean;
-}> {
-	const empty = { github: null, linked: false, projects: [], failed: false };
-	const client = hackatimeCredentials({
-		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
-		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
-	});
-	if (!client) return empty;
-
-	const db = await appDatabase();
-	let connection = await readHackatimeConnection(db, email);
-	if (!connection) return empty;
-
-	const remembered = connection.githubUsername;
-	if (connection.expiresAt != null && connection.expiresAt <= Date.now() + 30_000) {
-		if (!connection.refreshToken) {
-			return { github: remembered, linked: true, projects: [], failed: true };
-		}
-		try {
-			const tokens = await refreshAccessToken({
-				refreshToken: connection.refreshToken,
-				clientId: client.id,
-				clientSecret: client.secret
-			});
-			await updateHackatimeTokens(db, email, tokens);
-			connection = await readHackatimeConnection(db, email);
-		} catch {
-			return { github: remembered, linked: true, projects: [], failed: true };
-		}
-	}
-	if (!connection) return { github: null, linked: true, projects: [], failed: true };
-
-	const list = await fetchHackatimeProjects(connection.accessToken);
-	if (!list) return { github: connection.githubUsername, linked: true, projects: [], failed: true };
-	return {
-		github: connection.githubUsername,
-		linked: true,
-		failed: false,
-		projects: list.map((project: HackatimeProject) => ({
-			name: project.name,
-			seconds: project.totalSeconds,
-			hours: formatHours(project.totalSeconds),
-			eligible: hoursEligible(project.totalSeconds, bypassHours)
-		}))
-	};
-}
-
 export const actions: Actions = {
 	default: async ({ request, cookies, url }) => {
 		const access = await northernPageAllowed(cookies, url);
@@ -174,7 +137,7 @@ export const actions: Actions = {
 		const phase = submitPhase(new Date());
 		const tester = presubmitTester(participant.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));
 		if (!canSubmit(phase, access.admin || tester)) {
-			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : 'opens nov 27' });
+			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : 'Nov 27 to Dec 6' });
 		}
 
 		const name = cleanProjectName(project);
@@ -185,17 +148,13 @@ export const actions: Actions = {
 			return fail(400, { ...values, error: 'check the name, the story, and both links' });
 		}
 
-		const client = hackatimeCredentials({
-		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),
-		HACKATIME_CLIENT_SECRET: privateEnv('HACKATIME_CLIENT_SECRET')
-	});
-		if (!client) return fail(400, { ...values, error: 'Hackatime not connected yet' });
-
-		const live = await liveProjects(participant.email, tester);
-		if (!live.linked || live.failed) return fail(400, { ...values, error: 'connect hackatime, then pick a project' });
-		const match = live.projects.find((item) => item.name === picked);
-		if (!match) return fail(400, { ...values, error: 'pick one of your hackatime projects' });
-		if (!match.eligible) return fail(400, { ...values, error: 'under 5h, not eligible yet' });
+		const owned = await participantProject(await appDatabase(), participant.id);
+		if (!owned || owned.hackatimeProject !== picked) {
+			return fail(400, { ...values, error: 'create a project and link Hackatime first' });
+		}
+		const seconds = await codingSecondsInWindow(await appDatabase(), participant.id);
+		if (seconds == null && !tester) return fail(400, { ...values, error: "couldn't check Hackatime hours yet" });
+		if (seconds != null && !hoursEligible(seconds, tester)) return fail(400, { ...values, error: 'under 5h, not eligible yet' });
 
 		const file = data.get('screenshot');
 		if (!(file instanceof File) || file.size === 0) {
@@ -219,8 +178,8 @@ export const actions: Actions = {
 				demoUrl,
 				screenshot: bytes,
 				screenshotType: kind === 'png' ? 'image/png' : kind === 'jpg' ? 'image/jpeg' : 'image/webp',
-				hackatimeProject: match.name,
-				hackatimeSeconds: match.seconds
+				hackatimeProject: owned.hackatimeProject,
+				hackatimeSeconds: seconds ?? 0
 			});
 		} catch (err) {
 			if (err instanceof DatabaseUnconfigured) return fail(500, { ...values, error: 'database is not configured' });

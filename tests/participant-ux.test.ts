@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { codingWindow, secondsOnDay, spansFromPayload } from '../src/lib/coding-days.ts';
 import { arrangeHackatimeProjects } from '../src/lib/hackatime-projects.ts';
 import { projectsFromPayload } from '../src/lib/server/hackatime.ts';
 import { displayName, identityFromClaims, identityFromMe, participantAfterLogin } from '../src/lib/participant-identity.ts';
 
 test('sign-in lands on the hackathon page', () => {
 	assert.equal(participantAfterLogin(true), '/hackathon');
+	assert.equal(participantAfterLogin(true, true), '/hackathon/start');
 	assert.equal(participantAfterLogin(false), '/hackathon?signin=failed');
 });
 
@@ -27,6 +29,26 @@ test('the hack club name is trimmed and not rebuilt from first and last', () => 
 	assert.equal(merged.name, 'McPhilbin');
 	const kept = identityFromMe({ identity: { first_name: 'Mc', last_name: 'philbin' } }, claims!);
 	assert.equal(kept.name, 'McPhilbin');
+});
+
+test('coding time on a linked project counts for that ET day', () => {
+	const spans = spansFromPayload(
+		{ spans: [{ project: 'lantern', start_time: Date.parse('2026-11-27T15:00:00Z'), duration: 3600 }] },
+		'lantern'
+	);
+	assert.ok(spans);
+	assert.ok(secondsOnDay(spans!, '2026-11-27') > 0);
+	assert.equal(secondsOnDay(spans!, '2026-11-28'), 0);
+	const other = spansFromPayload(
+		{ spans: [{ project: 'tide', start_time: Date.parse('2026-11-27T15:00:00Z'), duration: 3600 }] },
+		'lantern'
+	);
+	assert.equal(other?.length, 0);
+	const window = codingWindow([{ day: '2026-11-27', people: 2, seconds: 7200 }], '2026-11-27');
+	assert.equal(window.today, 2);
+	assert.equal(window.days[0]?.people, 2);
+	assert.equal(window.days[0]?.hours, 2);
+	assert.equal(window.days.length, 10);
 });
 
 test('hackatime project payloads keep the name and the seconds', () => {

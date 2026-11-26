@@ -1,0 +1,7 @@
+Northern lights photograph used on the homepage.
+
+Source: https://commons.wikimedia.org/wiki/File:Tromso_safari_bright_aurora.JPG
+Author: Smitra0
+Licence: CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)
+Place: Tromsø, Norway
+The file in this repo is a resized WebP of that photograph.
