@@ -74,11 +74,42 @@ test('only a tester can be confirmed under 5 hours', () => {
 	assert.equal(confirmAllowed({ hackatimeSeconds: 3 * 3600, overrideHours: 4, tester: false }), false);
 });
 
-test('airtable sync stays off the sign-ups base and maps the ysws fields', () => {
+test('airtable sync writes only the approved YSWS table and maps the ysws fields', () => {
 	assert.equal(northernAirtableConfigured({ token: '', baseId: 'base', table: 'YSWS' }).error, 'Airtable sync is not configured');
+	assert.equal(
+		northernAirtableConfigured({
+			token: 't',
+			baseId: 'appvTVotaimtBHIsi',
+			table: 'tblrPzOp2NenfoRn2',
+			signupsBaseId: 'appvTVotaimtBHIsi',
+			signupsTable: 'Signups'
+		}).error,
+		undefined
+	);
 	assert.match(
-		northernAirtableConfigured({ token: 't', baseId: 'signups', table: 'YSWS', signupsBaseId: 'signups' }).error ?? '',
-		/sign-ups/
+		northernAirtableConfigured({
+			token: 't',
+			baseId: 'appvTVotaimtBHIsi',
+			table: 'Signups',
+			signupsTable: 'Signups'
+		}).error ?? '',
+		/sign-ups table/
+	);
+	assert.match(
+		northernAirtableConfigured({ token: 't', baseId: 'appvTVotaimtBHIsi', table: 'tblOther' }).error ?? '',
+		/that Airtable table/
+	);
+	assert.match(
+		northernAirtableConfigured({
+			token: 't',
+			baseId: 'app3A5kJwYqxMLOgh',
+			table: 'tblrPzOp2NenfoRn2'
+		}).error ?? '',
+		/Unified/
+	);
+	assert.match(
+		northernAirtableConfigured({ token: 't', baseId: 'appOther', table: 'tblrPzOp2NenfoRn2' }).error ?? '',
+		/that Airtable table/
 	);
 	const fields = airtableRecordFields({
 		email: 'ada@hackclub.com',

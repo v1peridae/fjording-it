@@ -27,6 +27,11 @@ export const AIRTABLE_FIELDS = {
 	screenshot: 'Screenshot'
 } as const;
 
+/** The only write Johnny approved: YSWS Project Submission in the Fjording base. */
+export const AIRTABLE_WRITE_ALLOWLIST = [{ baseId: 'appvTVotaimtBHIsi', tableId: 'tblrPzOp2NenfoRn2' }] as const;
+
+const UNIFIED_AIRTABLE_BASE = 'app3A5kJwYqxMLOgh';
+
 export function northernAirtableConfigured(env: {
 	token?: string;
 	baseId?: string;
@@ -38,12 +43,10 @@ export function northernAirtableConfigured(env: {
 	const baseId = env.baseId?.trim();
 	const table = env.table?.trim();
 	if (!token || !baseId || !table) return { error: 'Airtable sync is not configured' };
-	if (env.signupsBaseId && baseId === env.signupsBaseId.trim()) {
-		return { error: 'refusing to write the sign-ups Airtable base' };
-	}
-	if (env.signupsTable && table === env.signupsTable.trim() && env.signupsBaseId && baseId === env.signupsBaseId.trim()) {
-		return { error: 'refusing to write the sign-ups table' };
-	}
+	if (baseId === UNIFIED_AIRTABLE_BASE) return { error: 'refusing to write the Unified Airtable base' };
+	if (env.signupsTable && table === env.signupsTable.trim()) return { error: 'refusing to write the sign-ups table' };
+	const allowed = AIRTABLE_WRITE_ALLOWLIST.some((item) => item.baseId === baseId && item.tableId === table);
+	if (!allowed) return { error: 'refusing to write that Airtable table' };
 	return { token, baseId, table };
 }
 

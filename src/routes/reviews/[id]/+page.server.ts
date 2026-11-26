@@ -53,7 +53,8 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url, params })
 		token: privateEnv('AIRTABLE_TOKEN'),
 		baseId: privateEnv('NORTHERN_AIRTABLE_BASE_ID'),
 		table: privateEnv('NORTHERN_AIRTABLE_TABLE'),
-		signupsBaseId: privateEnv('AIRTABLE_BASE_ID')
+		signupsBaseId: privateEnv('AIRTABLE_BASE_ID'),
+		signupsTable: privateEnv('AIRTABLE_TABLE')
 	});
 	return {
 		role: admin.status === 'in' ? ('owner' as const) : ('reviewer' as const),
