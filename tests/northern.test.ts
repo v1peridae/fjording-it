@@ -5,7 +5,7 @@ import { assertCreateOnly } from '../src/lib/migrations.ts';
 import { addressCheck, ageCheck, ageYears, demographicsComplete, identityFromClaims, identityFromMe, PARTICIPANT_SCOPES } from '../src/lib/participant-identity.ts';
 import { authorizeUrl } from '../src/lib/server/admin-auth.ts';
 import { northernIsPublic } from '../src/lib/northern-access.ts';
-import { airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
+import { airtableDate, airtableRecordFields, northernAirtableConfigured } from '../src/lib/airtable-fields.ts';
 import {
 	copiedProjectCheck,
 	hackatimeLapseCheck,
@@ -166,6 +166,8 @@ test('airtable sync writes only the approved YSWS table and maps the ysws fields
 		postalCode: '05482'
 	});
 	assert.equal(placed['Birthday'], '2008-01-02');
+	assert.equal(airtableDate(new Date('2008-12-10T00:00:00.000Z')), '2008-12-10');
+	assert.equal(airtableDate('Mon Dec 10'), null);
 	assert.equal(placed['Address (Line 1)'], '1 Main');
 	assert.equal(placed['Address (Line 2)'], 'Apt 2');
 	assert.equal(placed['City'], 'Shelburne');
