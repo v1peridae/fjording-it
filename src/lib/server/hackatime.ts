@@ -139,26 +139,40 @@ export function profileFromPayload(json: unknown): HackatimeProfile | null {
 }
 
 export function projectsFromPayload(json: unknown): HackatimeProject[] | null {
-	if (!json || typeof json !== 'object') return null;
-	const list = (json as { projects?: unknown }).projects;
-	if (!Array.isArray(list)) return null;
+	const list = projectList(json);
+	if (!list) return null;
 	return list
 		.map((item) => {
 			if (!item || typeof item !== 'object') return null;
-			const project = item as { name?: unknown; total_seconds?: unknown; languages?: unknown };
-			if (typeof project.name !== 'string' || !project.name.trim()) return null;
-			const seconds = Number(project.total_seconds ?? 0);
+			const project = item as Record<string, unknown>;
+			const rawName = project.name ?? project.project ?? project.key;
+			if (typeof rawName !== 'string' || !rawName.trim()) return null;
+			const rawSeconds = project.total_seconds ?? project.totalSeconds ?? project.seconds ?? project.duration ?? 0;
+			const seconds = Number(rawSeconds);
 			const languages = Array.isArray(project.languages)
 				? project.languages.filter((lang): lang is string => typeof lang === 'string' && !!lang.trim())
 				: [];
 			return {
-				name: project.name.trim(),
+				name: rawName.trim(),
 				totalSeconds: Number.isFinite(seconds) ? seconds : 0,
 				languages
 			};
 		})
 		.filter((project): project is HackatimeProject => project !== null)
 		.sort((a, b) => b.totalSeconds - a.totalSeconds);
+}
+
+function projectList(json: unknown): unknown[] | null {
+	if (Array.isArray(json)) return json;
+	if (!json || typeof json !== 'object') return null;
+	const body = json as { projects?: unknown; data?: unknown };
+	if (Array.isArray(body.projects)) return body.projects;
+	if (Array.isArray(body.data)) return body.data;
+	if (body.data && typeof body.data === 'object') {
+		const nested = (body.data as { projects?: unknown }).projects;
+		if (Array.isArray(nested)) return nested;
+	}
+	return null;
 }
 
 export function formatHours(totalSeconds: number): string {
@@ -195,9 +209,15 @@ export async function fetchHackatimeProjects(
 	fetchImpl: typeof fetch = fetch
 ): Promise<HackatimeProject[] | null> {
 	try {
-		const json = await authedJson('/authenticated/projects', accessToken, fetchImpl);
-		if (!json) return null;
-		return projectsFromPayload(json);
+		let empty: HackatimeProject[] | null = null;
+		for (const path of ['/authenticated/projects', '/users/my/stats?features=projects', '/users/my/projects']) {
+			const json = await authedJson(path, accessToken, fetchImpl);
+			const projects = json ? projectsFromPayload(json) : null;
+			if (projects && projects.some((project) => project.totalSeconds > 0)) return projects;
+			if (projects && projects.length > 0) empty = projects;
+			else if (projects && !empty) empty = projects;
+		}
+		return empty;
 	} catch {
 		return null;
 	}

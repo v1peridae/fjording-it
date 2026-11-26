@@ -13,12 +13,12 @@ export function isJunkHackatimeName(name: string): boolean {
 	return false;
 }
 
-/** Eligible projects first, longest first. Zero-length names and 0 minutes stay out. */
+/** Eligible projects first, longest first. Blank names stay out. Zero minutes stay visible as not eligible. */
 export function arrangeHackatimeProjects(projects: HackatimeChoice[]): {
 	eligible: HackatimeChoice[];
 	later: HackatimeChoice[];
 } {
-	const visible = projects.filter((project) => project.name.trim() && project.seconds > 0);
+	const visible = projects.filter((project) => project.name.trim() && project.seconds >= 0);
 	const byHours = (left: HackatimeChoice, right: HackatimeChoice) => {
 		const junk = Number(isJunkHackatimeName(left.name)) - Number(isJunkHackatimeName(right.name));
 		if (junk !== 0) return junk;

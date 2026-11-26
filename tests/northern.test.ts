@@ -217,6 +217,22 @@ test('participant sign-in asks for address and birthday again and computes age',
 	assert.equal(messy.verificationStatus, 'pending');
 	assert.equal(messy.birthday, null);
 	assert.equal(identityFromMe(null, bare!), bare);
+	const fromMe = identityFromMe(
+		{
+			identity: {
+				id: 'ident!1',
+				birthday: '2008-01-02',
+				addresses: [{ line_1: '1 Main', line_2: 'Apt 2', city: 'Tromsø', state: 'Troms', postal_code: '9008', country: 'NO', primary: true }]
+			},
+			scopes: ['birthdate', 'address']
+		},
+		bare!
+	);
+	assert.equal(fromMe.birthday, '2008-01-02');
+	assert.equal(fromMe.address?.line1, '1 Main');
+	assert.equal(fromMe.address?.city, 'Tromsø');
+	const birthdateKey = identityFromMe({ identity: { birthdate: '2009-03-04' } }, bare!);
+	assert.equal(birthdateKey.birthday, '2009-03-04');
 });
 
 test('presubmit testers can submit before kickoff; a normal participant cannot', () => {
