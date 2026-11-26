@@ -449,6 +449,13 @@ body:has(.hackathon) {
 	font-size: 21px;
 }
 
+.hackathon .stipend .vote {
+	grid-column: 1 / -1;
+	margin: 2px 0 0;
+	font-family: var(--times);
+	font-size: 20px;
+}
+
 .hackathon .cap {
 	background: var(--cream);
 	color: var(--ink);

@@ -110,6 +110,7 @@
 					<p class="amt">$300</p>
 					<p class="top">top 5 projects, each</p>
 					<p class="what">flight stipend to norway</p>
+					<p class="vote">top 5 projects voted by HQ</p>
 					<p class="fine">unlocks when you buy your ticket.</p>
 				</div>
 				<div class="cap torn">
