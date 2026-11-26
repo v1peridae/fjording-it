@@ -486,8 +486,8 @@ body:has(.hackathon) {
 }
 
 .hackathon .headline span {
-	background: var(--cream);
-	color: var(--ink);
+	background: #d6ef6a;
+	color: #07160a;
 	padding: 0 8px;
 }
 
@@ -501,7 +501,7 @@ body:has(.hackathon) {
 .hackathon .rules dt {
 	font-family: var(--times);
 	font-size: 22px;
-	color: var(--kiwi);
+	color: var(--cream);
 	padding-top: 3px;
 }
 
@@ -512,9 +512,10 @@ body:has(.hackathon) {
 
 .hackathon .chan {
 	font-family: var(--display);
-	background: var(--cream);
-	color: var(--ink);
+	background: #d6ef6a;
+	color: #07160a;
 	padding: 0 8px;
+	text-decoration: none;
 }
 
 .hackathon .foot-space {
@@ -542,6 +543,8 @@ body:has(.hackathon) {
 	}
 
 	.hackathon nav {
+		flex-wrap: wrap;
+		align-items: flex-start;
 		padding: 10px 0;
 	}
 
@@ -550,13 +553,30 @@ body:has(.hackathon) {
 	}
 
 	.hackathon nav .right {
-		gap: 10px;
+		flex: 1 1 180px;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 8px 12px;
 	}
 
 	.hackathon nav ul {
 		display: flex;
-		gap: 0;
+		flex-wrap: wrap;
+		gap: 8px 12px;
 		font-size: 18px;
+	}
+
+	.hackathon .tag {
+		white-space: normal;
+	}
+
+	.hackathon .row > * {
+		height: auto;
+		min-height: 130px;
+	}
+
+	.hackathon .nw {
+		white-space: normal;
 	}
 
 	.hackathon nav ul li.opt {
@@ -650,11 +670,12 @@ body:has(.hackathon) {
 	}
 
 	.hackathon .row > * {
-		height: 150px;
+		height: auto;
+		min-height: 130px;
 	}
 
 	.hackathon .when b {
-		font-size: 30px;
+		font-size: 22px;
 	}
 
 	.hackathon section.block {
@@ -748,10 +769,6 @@ body:has(.hackathon) {
 	.hackathon .rules dd {
 		font-size: 21px;
 		margin-bottom: 14px;
-	}
-
-	.hackathon.submit-page nav ul {
-		display: none;
 	}
 
 	.hackathon .submit-hero {
@@ -1050,6 +1067,53 @@ body:has(.hackathon) {
 	white-space: nowrap;
 }
 
+.hackathon .signout {
+	background: transparent;
+	border: 0;
+	border-bottom: 2px solid var(--kiwi);
+	color: inherit;
+	font: inherit;
+	font-size: 18px;
+	cursor: pointer;
+	padding: 0;
+}
+
+.hackathon .yourein {
+	margin-top: 28px;
+	font-size: 28px;
+}
+
+.hackathon .hk-search {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+}
+
+.hackathon .hk-q {
+	width: 100%;
+	height: 44px;
+	margin-bottom: 8px;
+	border: 1.5px solid var(--ink);
+	background: var(--cream);
+	color: var(--ink);
+	font: inherit;
+	font-size: 18px;
+	padding: 0 12px;
+}
+
+.hackathon .later {
+	border-top: 1.5px solid var(--ink);
+}
+
+.hackathon .later summary {
+	padding: 8px 14px;
+	cursor: pointer;
+	font-family: var(--times);
+	font-size: 18px;
+}
+
 .hackathon .pick .ne {
 	font-weight: 400;
 	font-family: var(--times);
@@ -1162,10 +1226,6 @@ body:has(.hackathon) {
 }
 
 @media (max-width: 760px) {
-	.hackathon.submit-page nav ul {
-		display: none;
-	}
-
 	.hackathon .submit-hero {
 		padding: 28px 0 40px;
 	}

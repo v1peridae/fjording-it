@@ -27,6 +27,10 @@ export type ParticipantIdentity = {
  */
 export const PARTICIPANT_SCOPES = 'openid profile email name slack_id verification_status address birthdate';
 
+export function participantAfterLogin(ok: boolean): string {
+	return ok ? '/hackathon' : '/hackathon?signin=failed';
+}
+
 /** Missing birthday or address is unknown. A recorded value never blocks sign-in or submission. */
 export function ageCheck(birthday: string | null | undefined): 'unknown' | 'recorded' {
 	return birthday ? 'recorded' : 'unknown';
@@ -73,7 +77,7 @@ export function identityFromClaims(claims: Record<string, unknown>): Participant
 	if (!hackClubId || !email) return null;
 	const firstName = text(claims.given_name) ?? text(claims.first_name);
 	const lastName = text(claims.family_name) ?? text(claims.last_name);
-	const name = text(claims.name) ?? joinName(firstName, lastName);
+	const name = displayName(typeof claims.name === 'string' ? claims.name : joinName(firstName, lastName));
 	return {
 		hackClubId,
 		email,
@@ -103,7 +107,7 @@ export function identityFromMe(body: unknown, fallback: ParticipantIdentity): Pa
 		email: text(row.primary_email)?.toLowerCase() ?? fallback.email,
 		firstName: text(row.first_name) ?? fallback.firstName,
 		lastName: text(row.last_name) ?? fallback.lastName,
-		name: joinName(text(row.first_name), text(row.last_name)) ?? fallback.name,
+		name: displayName(typeof row.name === 'string' ? row.name : null) ?? fallback.name,
 		slackId: text(row.slack_id) ?? fallback.slackId,
 		verificationStatus: text(row.verification_status) ?? fallback.verificationStatus,
 		yswsEligible: typeof row.ysws_eligible === 'boolean' ? row.ysws_eligible : fallback.yswsEligible,
@@ -157,6 +161,13 @@ function addressRecord(value: unknown): ParticipantAddress | null {
 function joinName(first: string | null, last: string | null): string | null {
 	const name = [first, last].filter(Boolean).join(' ');
 	return name || null;
+}
+
+/** The name Hack Club Auth already gave us, with surrounding space removed. */
+export function displayName(value: string | null | undefined): string | null {
+	if (typeof value !== 'string') return null;
+	const trimmed = value.trim().replace(/\s+/g, ' ');
+	return trimmed || null;
 }
 
 function text(value: unknown): string | null {

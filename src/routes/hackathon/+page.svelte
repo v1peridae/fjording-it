@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';
 	import AdminNav from '#lib/AdminNav.svelte';
+	import PublicNav from './PublicNav.svelte';
 	import './hackathon.css';
 
 	let { data }: PageProps = $props();
@@ -22,7 +23,7 @@
 
 <svelte:head>
 	<title>fjording it: The Northern Challenge</title>
-	<meta name="description" content="online, fri nov 27 to sun dec 6." />
+	<meta name="description" content="online, fri nov 27, 12:00am ET to sun dec 6, 11:59pm ET." />
 	<meta name="robots" content="noindex, nofollow" />
 	<link
 		rel="preload"
@@ -54,24 +55,7 @@
 
 	<div class="topbar torn-bottom">
 		<div class="wrap">
-			<nav>
-				<a class="mini" href="/">fjording it</a>
-				<div class="right">
-					<ul>
-						{#each data.nav.public as link (link.href)}
-							<li class:opt={link.label === 'prizes' || link.label === 'rules'}>
-								<a href={link.href}>{link.label}</a>
-							</li>
-						{/each}
-					</ul>
-					{#if data.participantLabel}
-						<span class="tagwrap">
-							<img class="string" src="/hackathon/tag-string.svg" alt="" />
-							<span class="tag"><span class="t">signed in as</span><b>{data.participantLabel}</b></span>
-						</span>
-					{/if}
-				</div>
-			</nav>
+			<PublicNav home="/" links={data.nav.public} label={data.participantLabel} />
 		</div>
 	</div>
 
@@ -87,7 +71,7 @@
 			<div class="row">
 				<div class="when strip torn">
 					<span class="k">online, 10 days</span>
-					<b><span class="nw">fri nov 27</span> → <span class="nw">sun dec 6</span></b>
+					<b><span class="nw">fri nov 27, 12:00am ET</span> → <span class="nw">sun dec 6, 11:59pm ET</span></b>
 				</div>
 				<div class="ticket paper" aria-live="polite">
 					<p class="lbl">{view.label}</p>
@@ -102,6 +86,11 @@
 					{/if}
 				</div>
 			</div>
+			{#if data.notice}
+				<p class="banner strip torn">{data.notice}</p>
+			{:else if data.participantLabel}
+				<p class="yourein strip torn">you're in, {data.participantLabel}.</p>
+			{/if}
 		</div>
 	</header>
 
@@ -149,7 +138,7 @@
 					<dt>who</dt>
 					<dd>ages 13 to 18, signed up on fjording.hackclub.com</dd>
 					<dt>stuck?</dt>
-					<dd>ask in <span class="chan">#fjording-help</span></dd>
+					<dd>ask in <a class="chan" href="https://hackclub.slack.com/app_redirect?channel=fjording-help">#fjording-help</a></dd>
 				</dl>
 			</div>
 		</div>

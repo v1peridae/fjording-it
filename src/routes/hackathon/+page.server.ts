@@ -1,6 +1,8 @@
 import { hackathonNav } from '#lib/hackathon-nav.ts';
-import { currentParticipant, northernPageAllowed } from '#lib/server/participant.ts';
-import type { PageServerLoad } from './$types';
+import { displayName } from '#lib/participant-identity.ts';
+import { currentParticipant, northernPageAllowed, signOutParticipant } from '#lib/server/participant.ts';
+import { redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
 
@@ -18,7 +20,15 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		nav: hackathonNav(admin.status, Boolean(participant)),
 		handle: staff ? admin.handle : null,
 		email: staff ? admin.email : null,
-		participantLabel: participant?.name || participant?.email || null,
+		participantLabel: displayName(participant?.name) || participant?.email || null,
+		notice: url.searchParams.get('signin') === 'failed' ? "sign-in didn't work. try again." : null,
 		now: Date.now()
 	};
+};
+
+export const actions: Actions = {
+	signout: async ({ cookies, url }) => {
+		signOutParticipant(cookies, url);
+		redirect(303, '/hackathon');
+	}
 };
