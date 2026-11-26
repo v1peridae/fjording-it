@@ -1,5 +1,5 @@
 import { privateEnv } from '#lib/server/private-env.ts';
-import { AIRTABLE_FIELDS, airtableRecordFields, northernAirtableConfigured } from '../airtable-fields.ts';
+import { AIRTABLE_FIELDS, airtableDate, airtableRecordFields, northernAirtableConfigured } from '../airtable-fields.ts';
 import { appDatabase } from './app-db.ts';
 import { latestOutbox, listReviews, markOutbox, readHackatimeConnection, rememberAirtableRecord, submissionScreenshot } from './northern-store.ts';
 
@@ -83,7 +83,7 @@ async function loadForSync(submissionId: number) {
 			windowLabel: `${new Date(String(row.starts_at)).toISOString().slice(0, 10)} to ${new Date(String(row.ends_at)).toISOString().slice(0, 10)}`,
 			firstName: textOrEmpty(row.first_name),
 			lastName: textOrEmpty(row.last_name),
-			birthday: row.birthday == null ? null : String(row.birthday).slice(0, 10),
+			birthday: airtableDate(row.birthday),
 			addressLine1: textOrEmpty(row.address_line1),
 			addressLine2: textOrEmpty(row.address_line2),
 			city: textOrEmpty(row.city),
