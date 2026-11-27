@@ -4,6 +4,7 @@
 	import Dau from './Dau.svelte';
 	import Funnel from './Funnel.svelte';
 	import HomeCharts from './HomeCharts.svelte';
+	import ProgrammeStats from './ProgrammeStats.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -133,6 +134,12 @@
 						<span class="k-sub">{home ? (home.flagged ? 'latest check flagged' : 'none flagged') : ''}</span>
 					</div>
 				</section>
+
+				{#if data.programme}
+					<ProgrammeStats stats={data.programme} />
+				{:else if data.programmeError}
+					<p class="card-cream" style="margin-bottom:22px">{data.programmeError}</p>
+				{/if}
 
 				{#if data.dau}
 					<Dau

@@ -6,6 +6,7 @@ import type { HackatimeTokens } from './hackatime.ts';
 import type { CheckResult } from '../review-checks.ts';
 import { FUNNEL_SQL, funnelFromRow, funnelStages, type FunnelStage } from '../funnel.ts';
 import { type Decision, type PipelineStage, type Stage } from '../review-pipeline.ts';
+import type { ProgrammeParticipant, ProgrammeReview, ProgrammeSubmission } from '../programme-stats.ts';
 
 export const NORTHERN_SLUG = 'northern';
 
@@ -840,6 +841,68 @@ export async function queueFacets(db: Sql, challenge: string) {
 export async function loadParticipantFunnel(db: Sql): Promise<{ stages: FunnelStage[]; approvedHours: number }> {
 	const { rows } = await db.query(FUNNEL_SQL);
 	return funnelStages(funnelFromRow(rows[0] ?? {}));
+}
+
+/** Read-only rows for the admin programme stats. Test submissions are left out here. */
+export async function loadProgrammeRows(db: Sql): Promise<{
+	participants: ProgrammeParticipant[];
+	submissions: ProgrammeSubmission[];
+	reviews: ProgrammeReview[];
+}> {
+	const [people, subs, reviews] = await Promise.all([
+		db.query(
+			`SELECT p.email, p.country, p.challenge_join, p.created_at, pp.created_at AS project_at,
+			        EXISTS (SELECT 1 FROM hackatime_connections h WHERE lower(h.email) = lower(p.email)) AS connected,
+			        cd.seconds, cd.n,
+			        EXISTS (
+			          SELECT 1 FROM submissions s
+			          WHERE s.challenge = $3 AND s.is_test = false
+			            AND (s.participant_id = p.id OR lower(s.email) = lower(p.email))
+			        ) AS submitted
+			 FROM participants p
+			 LEFT JOIN participant_projects pp ON pp.participant_id = p.id
+			 LEFT JOIN (
+			   SELECT participant_id, sum(seconds)::bigint AS seconds, count(*)::int AS n
+			   FROM coding_days WHERE day BETWEEN $1::date AND $2::date
+			   GROUP BY participant_id
+			 ) cd ON cd.participant_id = p.id`,
+			[WINDOW_START, WINDOW_END, NORTHERN_SLUG]
+		),
+		db.query(
+			`SELECT id, created_at, stage, status FROM submissions WHERE challenge = $1 AND is_test = false`,
+			[NORTHERN_SLUG]
+		),
+		db.query(
+			`SELECT r.submission_id, r.created_at, r.decision
+			 FROM submission_reviews r
+			 JOIN submissions s ON s.id = r.submission_id AND s.challenge = $1 AND s.is_test = false`,
+			[NORTHERN_SLUG]
+		)
+	]);
+	const iso = (value: unknown) => new Date(String(value)).toISOString();
+	return {
+		participants: people.rows.map((row) => ({
+			email: String(row.email ?? ''),
+			country: typeof row.country === 'string' ? row.country : null,
+			createdAt: iso(row.created_at),
+			joined: row.challenge_join === 'in',
+			projectAt: row.project_at == null ? null : iso(row.project_at),
+			connected: row.connected === true,
+			windowSeconds: row.n == null || Number(row.n) === 0 ? null : Number(row.seconds ?? 0),
+			submitted: row.submitted === true
+		})),
+		submissions: subs.rows.map((row) => ({
+			id: Number(row.id),
+			at: iso(row.created_at),
+			stage: String(row.stage),
+			status: String(row.status)
+		})),
+		reviews: reviews.rows.map((row) => ({
+			submissionId: Number(row.submission_id),
+			at: iso(row.created_at),
+			decision: String(row.decision)
+		}))
+	};
 }
 
 export async function loadAdminHome(db: Sql) {

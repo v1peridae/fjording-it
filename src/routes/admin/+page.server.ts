@@ -9,7 +9,8 @@ import { beginHackClubLogin, currentAdminView, signOutAdmin, takeFlash } from '#
 import { appDatabase, databaseConfigured } from '#lib/server/app-db.ts';
 import { codingWindow, etDayKey } from '#lib/coding-days.ts';
 import { refreshCodingDays } from '#lib/server/coding-dau.ts';
-import { codingSnapshot, flagTesterSubmissions, listReviewers, loadAdminHome, loadParticipantFunnel, reviewerStats } from '#lib/server/northern-store.ts';
+import { codingSnapshot, flagTesterSubmissions, listReviewers, loadAdminHome, loadParticipantFunnel, loadProgrammeRows, reviewerStats } from '#lib/server/northern-store.ts';
+import { buildProgrammeStats, type ProgrammeStats } from '#lib/programme-stats.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const prerender = false;
@@ -53,7 +54,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	const from = url.searchParams.get('from') ?? '';
 	const to = url.searchParams.get('to') ?? '';
 	if (!databaseConfigured()) {
-		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, dbError: null, funnel: null, dau: null, people: [], from, to };
+		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, dbError: null, funnel: null, dau: null, programme: null, programmeError: null, people: [], from, to };
 	}
 	try {
 		const db = await appDatabase();
@@ -65,6 +66,13 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		const dau = { ...codingWindow(snap.rows, etDayKey(new Date())), signups: snap.signups, onboarded: snap.onboarded, today: snap.today, refreshFailed: refresh.failed };
 		const rows = await reviewerStats(db, dateParam(from), dateParam(to) ? new Date(dateParam(to)!.getTime() + 86_400_000) : null);
 		const directory = await listReviewers(db);
+		let programme: ProgrammeStats | null = null;
+		let programmeError: string | null = null;
+		try {
+			programme = buildProgrammeStats({ ...(await loadProgrammeRows(db)), testerEmails: privateEnv('PRESUBMIT_TESTER_EMAILS') });
+		} catch {
+			programmeError = "couldn't load programme stats";
+		}
 		return {
 			view: 'home' as const,
 			email: admin.email,
@@ -73,13 +81,15 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 			db: home,
 			funnel,
 			dau,
+			programme,
+			programmeError,
 			dbError: null,
 			people: shapePeople(rows, directory),
 			from,
 			to
 		};
 	} catch {
-		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, funnel: null, dau: null, dbError: "couldn't load submissions", people: [], from, to };
+		return { view: 'home' as const, email: admin.email, handle: admin.handle, signups, db: null, funnel: null, dau: null, programme: null, programmeError: null, dbError: "couldn't load submissions", people: [], from, to };
 	}
 };
 
