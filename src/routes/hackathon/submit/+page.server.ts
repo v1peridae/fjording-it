@@ -9,8 +9,11 @@ import { liveProjects } from '#lib/server/live-projects.ts';
 import { refreshPerson } from '#lib/server/coding-dau.ts';
 import {
 	HackatimeProjectTaken,
+	clearSubmissionDraft,
 	codingSecondsInWindow,
 	insertSubmission,
+	readSubmissionDraft,
+	saveSubmissionDraft,
 	isUniqueViolation,
 	NORTHERN_SLUG,
 	participantProject,
@@ -52,8 +55,11 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	let owned: { name: string; hackatimeProject: string } | null = null;
 	let tracker: { hours: string; eligible: boolean; unknown: boolean } | null = null;
 
+	let draft: { project: string; description: string; repo: string; demo: string } | null = null;
 	if (participant && databaseConfigured()) {
-		owned = await participantProject(await appDatabase(), participant.id).catch(() => null);
+		const db = await appDatabase();
+		owned = await participantProject(db, participant.id).catch(() => null);
+		draft = await readSubmissionDraft(db, participant.id).catch(() => null);
 	}
 	if (participant && configured && databaseConfigured()) {
 		try {
@@ -104,7 +110,8 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		github,
 		ticket,
 		notice,
-		shipped
+		shipped,
+		draft
 	};
 };
 
@@ -120,6 +127,18 @@ function hackatimeNotice(flag: string | null, configured: boolean): string | nul
 }
 
 export const actions: Actions = {
+	draft: async ({ request, cookies, url }) => {
+		const participant = await currentParticipant(cookies, url);
+		if (!participant || !databaseConfigured()) return { saved: false };
+		const data = await request.formData();
+		await saveSubmissionDraft(await appDatabase(), participant.id, {
+			project: String(data.get('project') ?? '').slice(0, 200),
+			description: String(data.get('description') ?? '').slice(0, 4000),
+			repo: String(data.get('repo') ?? '').slice(0, 300),
+			demo: String(data.get('demo') ?? '').slice(0, 300)
+		});
+		return { saved: true };
+	},
 	default: async ({ request, cookies, url }) => {
 		const access = await northernPageAllowed(cookies, url);
 		const participant = await currentParticipant(cookies, url);
@@ -189,6 +208,7 @@ export const actions: Actions = {
 			throw err;
 		}
 		await runSubmissionChecks(submissionId).catch(() => undefined);
+		await clearSubmissionDraft(await appDatabase(), participant.id).catch(() => undefined);
 
 		cookies.set(SHIPPED, '1', {
 			path: '/hackathon',

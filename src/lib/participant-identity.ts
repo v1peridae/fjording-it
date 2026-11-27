@@ -54,7 +54,7 @@ export function afterSignIn(options: {
 	if (signInFrom(options.from) !== '/') {
 		return options.hasProject ? '/hackathon' : '/hackathon/start';
 	}
-	if (options.choice === 'later') return '/hackathon';
+	if (options.choice === 'later') return '/hackathon/you';
 	if (options.choice === 'in') return options.hasProject ? '/hackathon' : '/hackathon/start';
 	return '/hackathon/join';
 }

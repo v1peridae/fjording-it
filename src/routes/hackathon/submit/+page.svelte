@@ -12,6 +12,31 @@
 		{ href: '/hackathon#rules', label: 'rules' }
 	];
 	let shipAs = $derived(displayName(data.participant?.name) ?? data.participant?.email ?? null);
+	let draftTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function kept(posted: string | undefined, saved: string | undefined) {
+		return posted ?? saved ?? '';
+	}
+
+	function sendDraft(form: HTMLFormElement) {
+		const body = new FormData(form);
+		body.delete('screenshot');
+		fetch('?/draft', { method: 'POST', body });
+	}
+
+	function keepDraft(event: Event) {
+		const form = event.currentTarget;
+		if (!(form instanceof HTMLFormElement) || !data.participant) return;
+		clearTimeout(draftTimer);
+		draftTimer = setTimeout(() => sendDraft(form), 400);
+	}
+
+	function flushDraft(event: Event) {
+		const form = event.currentTarget;
+		if (!(form instanceof HTMLFormElement) || !data.participant) return;
+		clearTimeout(draftTimer);
+		sendDraft(form);
+	}
 
 	function onfile(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
@@ -74,7 +99,7 @@
 	</header>
 
 	<main class="wrap formwrap">
-		<form class="formcard paper" method="POST" enctype="multipart/form-data">
+		<form class="formcard paper" method="POST" enctype="multipart/form-data" oninput={keepDraft} onchange={keepDraft} onfocusout={flushDraft}>
 			{#if data.phase === 'early'}
 				<p class="banner strip torn">Nov 27 to Dec 6 <span class="close">closes Sun Dec 6 at 11:59pm ET</span></p>
 			{/if}
@@ -104,7 +129,7 @@
 				<div class="fields">
 					<div class="f">
 						<label for="pn">project name</label>
-						<input id="pn" name="project" value={form?.project ?? ''} placeholder="goose tracker 3000" required />
+						<input id="pn" name="project" value={kept(form?.project, data.draft?.project)} placeholder="goose tracker 3000" required />
 					</div>
 					<div class="f">
 						<p class="lab" id="hk-l">fjording project</p>
@@ -121,7 +146,7 @@
 					</div>
 					<div class="f">
 						<label for="gh">github repo <em class="req">required</em></label>
-						<input id="gh" name="repo" value={form?.repo ?? ''} required placeholder="github.com/you/goose" />
+						<input id="gh" name="repo" value={kept(form?.repo, data.draft?.repo)} required placeholder="github.com/you/goose" />
 					</div>
 					<div class="f">
 						<label for="dm">playable url <em class="req">required</em></label>
@@ -129,7 +154,7 @@
 							id="dm"
 							name="demo"
 							type="url"
-							value={form?.demo ?? ''}
+							value={kept(form?.demo, data.draft?.demo)}
 							required
 							placeholder="goose.you.dev"
 						/>
@@ -152,7 +177,7 @@
 							id="bl"
 							name="description"
 							placeholder="tell us what it does, what broke, and what you figured out."
-							required>{form?.description ?? ''}</textarea
+							required>{kept(form?.description, data.draft?.description)}</textarea
 						>
 					</div>
 				</div>
