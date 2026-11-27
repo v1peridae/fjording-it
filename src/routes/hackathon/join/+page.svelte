@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CHALLENGE_SPAN } from '#lib/hackathon.ts';
 	import PublicNav from '../PublicNav.svelte';
 	import type { PageProps } from './$types';
 	import '../hackathon.css';
@@ -36,7 +37,7 @@
 	<main class="wrap formwrap">
 		<form class="formcard paper join-ask" method="POST">
 			{#if form?.error}<p class="banner strip torn">{form.error}</p>{/if}
-			<p>ten days online, nov 27 to dec 6. you can set up a project now or come back to it.</p>
+			<p>{CHALLENGE_SPAN}. you can set up a project now or come back to it.</p>
 			<p class="prizes">
 				code for 5 hours and we send you a cap. the top 5 projects, picked by HQ, each get $300 toward a flight to norway once you get your ticket.
 			</p>

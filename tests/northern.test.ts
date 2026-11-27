@@ -198,9 +198,13 @@ test('the migration creates tables and does not remove them', () => {
 	assert.match(participants, /CREATE TABLE IF NOT EXISTS participants/);
 	assert.match(participants, /submissions_one_hackatime_project/);
 	assertCreateOnly('002_participants.sql', participants);
+	const opened = readFileSync(new URL('../migrations/007_challenge_start.sql', import.meta.url), 'utf8');
+	assert.match(opened, /2026-11-27T02:00:00Z/);
+	assert.doesNotMatch(opened, /\bdelete\s+from\b/i);
+	assertCreateOnly('007_challenge_start.sql', opened);
 	assert.equal(northernIsPublic('true'), true);
-	assert.equal(northernIsPublic('false'), false);
-	assert.equal(northernIsPublic(undefined), false);
+	assert.equal(northernIsPublic('false'), true);
+	assert.equal(northernIsPublic(undefined), true);
 	const identity = identityFromClaims({
 		sub: 'ident!abc',
 		email: 'Ada@hackclub.com',
@@ -280,7 +284,8 @@ test('presubmit testers can submit before kickoff; a normal participant cannot',
 	const before = new Date('2026-11-26T12:00:00.000Z');
 	const list = 'johnathanmcphilbin2@gmail.com, other@hackclub.com';
 	assert.equal(submitPhase(before), 'early');
-	assert.equal(hackathonKickoff().toISOString(), '2026-11-27T05:00:00.000Z');
+	assert.equal(hackathonKickoff().toISOString(), '2026-11-27T02:00:00.000Z');
+	assert.equal(submitPhase(new Date('2026-11-27T02:00:00.000Z')), 'open');
 	assert.equal(canSubmit('early', presubmitTester('JohnathanMcphilbin2@gmail.com', list)), true);
 	assert.equal(canSubmit('early', presubmitTester('someone@hackclub.com', list)), false);
 	assert.equal(canSubmit('early', presubmitTester('someone@hackclub.com', '')), false);

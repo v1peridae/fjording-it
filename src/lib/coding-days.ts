@@ -1,6 +1,6 @@
 import { zonedWallTime } from './hackathon.ts';
 
-export const WINDOW_START = '2026-11-27';
+export const WINDOW_START = '2026-11-26';
 export const WINDOW_END = '2026-12-06';
 
 export type CodingSpan = { startMs: number; endMs: number };

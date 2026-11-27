@@ -2,19 +2,19 @@ const ET = 'America/New_York';
 
 export type AdminStatus = 'in' | 'denied' | 'out';
 
-/** Signed-out visitors and non-admins get the same not-found as a missing page. */
-export function hackathonAllowed(status: AdminStatus): boolean {
-	return status === 'in';
+/** The challenge page is public. Joining and shipping still need a participant sign-in. */
+export function hackathonAllowed(_status: AdminStatus): boolean {
+	return true;
 }
 
 type WallTime = { year: number; month: number; day: number; hour: number; minute: number };
 
-/** Fri Nov 27, 2026, 00:00 America/New_York. */
-export const KICKOFF: WallTime = { year: 2026, month: 11, day: 27, hour: 0, minute: 0 };
+/** Thu Nov 26, 2026, 9:00 PM America/New_York. */
+export const KICKOFF: WallTime = { year: 2026, month: 11, day: 26, hour: 21, minute: 0 };
 /** Sun Dec 6, 2026, 11:59 PM America/New_York. */
 export const DEADLINE: WallTime = { year: 2026, month: 12, day: 6, hour: 23, minute: 59 };
 
-export const CHALLENGE_SPAN = 'Nov 27 to Dec 6';
+export const CHALLENGE_SPAN = 'live now, ends dec 6';
 export const CHALLENGE_CLOSES = 'closes Sun Dec 6 at 11:59pm ET';
 
 export function zonedWallTime(time: WallTime, timeZone = ET): Date {

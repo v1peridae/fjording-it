@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CHALLENGE_CLOSES, CHALLENGE_SPAN } from '#lib/hackathon.ts';
 	import { displayName } from '#lib/participant-identity.ts';
 	import type { PageProps } from './$types';
 	import PublicNav from '../PublicNav.svelte';
@@ -91,8 +92,8 @@
 			<h1>ship your project</h1>
 			<div>
 				<p class="sub strip torn">
-					ship any software project, at least 5 hours long, with a playable url and a github link. Nov 27 to Dec 6.
-					closes Sun Dec 6 at 11:59pm ET.
+					ship any software project, at least 5 hours long, with a playable url and a github link. {CHALLENGE_SPAN}.
+					{CHALLENGE_CLOSES}.
 				</p>
 			</div>
 		</div>
@@ -101,7 +102,7 @@
 	<main class="wrap formwrap">
 		<form class="formcard paper" method="POST" action="?/ship" enctype="multipart/form-data" oninput={keepDraft} onchange={keepDraft} onfocusout={flushDraft}>
 			{#if data.phase === 'early'}
-				<p class="banner strip torn">Nov 27 to Dec 6 <span class="close">closes Sun Dec 6 at 11:59pm ET</span></p>
+				<p class="banner strip torn">{CHALLENGE_SPAN} <span class="close">{CHALLENGE_CLOSES}</span></p>
 			{/if}
 			{#if data.shipped}
 				<p class="banner strip torn">shipped.</p>
@@ -187,7 +188,7 @@
 						{#if !data.allowed && data.phase === 'closed'}
 							that's a wrap
 						{:else if !data.allowed}
-							Nov 27 to Dec 6
+							{CHALLENGE_SPAN}
 						{:else}
 							double-check both links work before you ship.
 						{/if}
