@@ -7,6 +7,7 @@ import type { CheckResult } from '../review-checks.ts';
 import { FUNNEL_SQL, funnelFromRow, funnelStages, type FunnelStage } from '../funnel.ts';
 import { type Decision, type PipelineStage, type Stage } from '../review-pipeline.ts';
 import type { ProgrammeParticipant, ProgrammeReview, ProgrammeSubmission } from '../programme-stats.ts';
+import { hourBalance, parseRewardChoice, type BalanceSubmission, type RewardChoice } from '../reward.ts';
 
 export const NORTHERN_SLUG = 'northern';
 
@@ -169,6 +170,70 @@ export async function challengeChoice(db: Sql, participantId: number): Promise<J
 
 export async function setChallengeChoice(db: Sql, participantId: number, choice: 'in' | 'later') {
 	await db.query(`UPDATE participants SET challenge_join = $2 WHERE id = $1`, [participantId, choice]);
+}
+
+export async function rewardChoice(db: Sql, participantId: number): Promise<RewardChoice | null> {
+	const { rows } = await db.query(`SELECT reward_choice FROM participants WHERE id = $1`, [participantId]);
+	return parseRewardChoice(rows[0]?.reward_choice);
+}
+
+export async function setRewardChoice(db: Sql, participantId: number, choice: RewardChoice) {
+	await db.query(
+		`UPDATE participants SET reward_choice = $2, reward_choice_at = now()
+		 WHERE id = $1 AND reward_choice IS DISTINCT FROM $2`,
+		[participantId, choice]
+	);
+}
+
+const BALANCE_ROWS_SQL = `
+	SELECT p.id AS participant_id, s.challenge, s.stage, s.status, s.is_test, s.hackatime_seconds, s.override_hours
+	FROM submissions s
+	JOIN participants p ON s.participant_id = p.id OR (s.participant_id IS NULL AND lower(s.email) = lower(p.email))
+	WHERE s.challenge = $1`;
+
+function balanceRow(row: Record<string, unknown>): BalanceSubmission {
+	return {
+		challenge: String(row.challenge),
+		stage: String(row.stage),
+		status: String(row.status),
+		isTest: row.is_test === true,
+		hackatimeSeconds: Number(row.hackatime_seconds),
+		overrideHours: row.override_hours == null ? null : Number(row.override_hours)
+	};
+}
+
+/**
+ * Admin only: sets one participant's hour balance to the computed value. Returns nothing on
+ * purpose so participant routes can call it without the number ending up in page data.
+ */
+export async function syncHourBalance(db: Sql, participantId: number): Promise<void> {
+	const { rows } = await db.query(`${BALANCE_ROWS_SQL} AND p.id = $2`, [NORTHERN_SLUG, participantId]);
+	await db.query(`UPDATE participants SET hour_balance = $2, hour_balance_at = now() WHERE id = $1`, [
+		participantId,
+		hourBalance(rows.map(balanceRow), NORTHERN_SLUG)
+	]);
+}
+
+/** Admin only: sets every participant's hour balance to the computed value, 0 when nothing counts yet. */
+export async function syncAllHourBalances(db: Sql): Promise<void> {
+	const { rows } = await db.query(BALANCE_ROWS_SQL, [NORTHERN_SLUG]);
+	const byPerson = new Map<number, BalanceSubmission[]>();
+	for (const row of rows) {
+		const id = Number(row.participant_id);
+		const list = byPerson.get(id) ?? [];
+		list.push(balanceRow(row));
+		byPerson.set(id, list);
+	}
+	const ids = [...byPerson.keys()];
+	const hours = ids.map((id) => hourBalance(byPerson.get(id) ?? [], NORTHERN_SLUG));
+	await db.query(
+		`UPDATE participants p
+		 SET hour_balance = COALESCE(v.hours, 0), hour_balance_at = now()
+		 FROM participants q
+		 LEFT JOIN unnest($1::bigint[], $2::numeric[]) AS v(id, hours) ON v.id = q.id
+		 WHERE p.id = q.id`,
+		[ids, hours]
+	);
 }
 
 export async function saveParticipantProject(
@@ -852,6 +917,7 @@ export async function loadProgrammeRows(db: Sql): Promise<{
 	const [people, subs, reviews] = await Promise.all([
 		db.query(
 			`SELECT p.email, p.country, p.challenge_join, p.created_at, pp.created_at AS project_at,
+			        p.reward_choice, p.hour_balance,
 			        EXISTS (SELECT 1 FROM hackatime_connections h WHERE lower(h.email) = lower(p.email)) AS connected,
 			        cd.seconds, cd.n,
 			        EXISTS (
@@ -889,7 +955,9 @@ export async function loadProgrammeRows(db: Sql): Promise<{
 			projectAt: row.project_at == null ? null : iso(row.project_at),
 			connected: row.connected === true,
 			windowSeconds: row.n == null || Number(row.n) === 0 ? null : Number(row.seconds ?? 0),
-			submitted: row.submitted === true
+			submitted: row.submitted === true,
+			rewardChoice: parseRewardChoice(row.reward_choice),
+			hourBalance: row.hour_balance == null ? null : Number(row.hour_balance)
 		})),
 		submissions: subs.rows.map((row) => ({
 			id: Number(row.id),

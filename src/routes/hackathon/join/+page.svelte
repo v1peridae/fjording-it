@@ -39,7 +39,7 @@
 			{#if form?.error}<p class="banner strip torn">{form.error}</p>{/if}
 			<p>{CHALLENGE_SPAN}. you can set up a project now or come back to it.</p>
 			<p class="prizes">
-				code for 5 hours and we send you a cap. the top 5 projects, picked by HQ, each get $300 toward a flight to norway once you get your ticket.
+				code for 5 hours, then get the cap, or skip it and stay in the running for the $300. the top 5 projects that skip the cap, picked by HQ, each get $300 toward a flight to norway once you get your ticket.
 			</p>
 			<div class="ask">
 				<button class="btn stampbtn inkstamp stamp" name="choice" value="in" type="submit">yes</button>

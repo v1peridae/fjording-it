@@ -2,10 +2,11 @@
 	import { onMount } from 'svelte';
 	import { timeUntilDeadline } from '#lib/hackathon.ts';
 	import PublicNav from '../PublicNav.svelte';
+	import RewardPick from '../RewardPick.svelte';
 	import type { PageProps } from './$types';
 	import '../hackathon.css';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 	let ticked = $state<number | undefined>(undefined);
 	let view = $derived(timeUntilDeadline(new Date(ticked ?? data.now)));
 
@@ -63,6 +64,14 @@
 			{:else}
 				<p class="v">{data.hours} so far</p>
 			{/if}
+			<form class="reward-form" method="POST" action="?/reward">
+				{#if form?.error}<p class="banner strip torn">{form.error}</p>{/if}
+				{#if form?.saved}<p class="banner strip torn">saved your pick</p>{/if}
+				<RewardPick choice={data.reward} disabled={!data.rewardOpen} nudge={data.nearFive} />
+				{#if data.rewardOpen}
+					<button class="btn stampbtn inkstamp stamp" type="submit">save my pick</button>
+				{/if}
+			</form>
 			<p class="next"><a href="/hackathon/start">set up your project</a> · <a href="/hackathon/submit">submit</a></p>
 		</section>
 	</main>
@@ -80,6 +89,17 @@
 		font-family: var(--display);
 		font-size: 28px;
 		line-height: 1.15;
+	}
+
+	.reward-form {
+		margin: 22px 0 0;
+		display: grid;
+		gap: 14px;
+		justify-items: start;
+	}
+
+	.reward-form :global(.reward) {
+		width: 100%;
 	}
 
 	.you-card .next {

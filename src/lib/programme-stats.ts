@@ -1,6 +1,7 @@
 import { dayLabel, etDayKey } from './coding-days.ts';
 import { countdownAt, hackathonDeadline, hackathonKickoff, type Countdown } from './hackathon.ts';
 import { median } from './review-pipeline.ts';
+import type { RewardChoice } from './reward.ts';
 
 /**
  * Admin programme stats. Everything here is counted from rows we already store.
@@ -18,6 +19,20 @@ export type ProgrammeParticipant = {
 	/** Sum of cached Hackatime seconds in the challenge window. null = never fetched. */
 	windowSeconds: number | null;
 	submitted: boolean;
+	/** 'cap', 'prize', or null when they have not picked. */
+	rewardChoice?: RewardChoice | null;
+	/** Admin only. Stored hour balance. null = not synced yet. */
+	hourBalance?: number | null;
+};
+
+export type RewardPerson = { email: string; choice: RewardChoice | null; hours: number | null };
+export type RewardStats = {
+	cap: number;
+	prize: number;
+	none: number;
+	/** Sum of stored balances. null when nobody has been synced yet. */
+	bankedTotal: number | null;
+	people: RewardPerson[];
 };
 
 export type ProgrammeSubmission = { id: number; at: string; stage: string; status: string };
@@ -58,6 +73,7 @@ export type ProgrammeStats = {
 		backlog: { count: number; oldestAt: string | null; medianAgeHours: number | null; under1d: number; d1to3: number; over3d: number };
 	};
 	clock: { countdown: Countdown; startsAt: string; endsAt: string; day: number | null; totalDays: number };
+	rewards: RewardStats;
 };
 
 const HOUR = 3_600_000;
@@ -92,7 +108,8 @@ export function buildProgrammeStats(
 		joinsUndated: joiners.filter((p) => !p.projectAt).length,
 		hours: hoursSplit(joiners),
 		submissions: submissionStats(input.submissions, input.reviews, now),
-		clock: clock(now, window.start, window.end)
+		clock: clock(now, window.start, window.end),
+		rewards: rewardSplit(people)
 	};
 }
 
@@ -127,6 +144,32 @@ export function hoursSplit(joiners: ProgrammeParticipant[]) {
 		stalled: buckets[0].count,
 		noProject: joiners.filter((p) => !p.projectAt).length,
 		fiveNotSubmitted
+	};
+}
+
+/** Who picked the cap, who skipped it, and stored hour balances. People with neither are left out of the list. */
+export function rewardSplit(people: ProgrammeParticipant[]): RewardStats {
+	let cap = 0;
+	let prize = 0;
+	let none = 0;
+	let bankedTotal: number | null = null;
+	const list: RewardPerson[] = [];
+	for (const person of people) {
+		const choice = person.rewardChoice ?? null;
+		const hours = person.hourBalance != null && Number.isFinite(person.hourBalance) ? person.hourBalance : null;
+		if (choice === 'cap') cap += 1;
+		else if (choice === 'prize') prize += 1;
+		else if (person.joined) none += 1;
+		if (hours != null) bankedTotal = (bankedTotal ?? 0) + hours;
+		if (choice || (hours != null && hours > 0)) list.push({ email: person.email, choice, hours });
+	}
+	list.sort((a, b) => (b.hours ?? -1) - (a.hours ?? -1) || a.email.localeCompare(b.email));
+	return {
+		cap,
+		prize,
+		none,
+		bankedTotal: bankedTotal == null ? null : Math.round(bankedTotal * 100) / 100,
+		people: list
 	};
 }
 

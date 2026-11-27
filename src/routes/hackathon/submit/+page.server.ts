@@ -17,8 +17,11 @@ import {
 	isUniqueViolation,
 	NORTHERN_SLUG,
 	participantProject,
-	readHackatimeConnection
+	readHackatimeConnection,
+	rewardChoice,
+	setRewardChoice
 } from '#lib/server/northern-store.ts';
+import { canChangeReward, parseRewardChoice, type RewardChoice } from '#lib/reward.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import { sniffImage } from '#lib/northern.ts';
 import { CHALLENGE_SPAN } from '#lib/hackathon.ts';
@@ -57,10 +60,12 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	let tracker: { hours: string; eligible: boolean; unknown: boolean } | null = null;
 
 	let draft: { project: string; description: string; repo: string; demo: string } | null = null;
+	let reward: RewardChoice | null = null;
 	if (participant && databaseConfigured()) {
 		const db = await appDatabase();
 		owned = await participantProject(db, participant.id).catch(() => null);
 		draft = await readSubmissionDraft(db, participant.id).catch(() => null);
+		reward = await rewardChoice(db, participant.id).catch(() => null);
 	}
 	if (participant && configured && databaseConfigured()) {
 		try {
@@ -112,9 +117,17 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		ticket,
 		notice,
 		shipped,
-		draft
+		draft,
+		reward,
+		rewardOpen: canChangeReward(phase)
 	};
 };
+
+async function keepRewardChoice(participantId: number, value: FormDataEntryValue | null) {
+	const choice = parseRewardChoice(value);
+	if (!choice || !canChangeReward(submitPhase(new Date())) || !databaseConfigured()) return;
+	await setRewardChoice(await appDatabase(), participantId, choice);
+}
 
 function signinNotice(flag: string | null): string | null {
 	if (flag === 'failed') return "sign-in didn't work. try again.";
@@ -132,6 +145,7 @@ export const actions: Actions = {
 		const participant = await currentParticipant(cookies, url);
 		if (!participant || !databaseConfigured()) return { saved: false };
 		const data = await request.formData();
+		await keepRewardChoice(participant.id, data.get('reward')).catch(() => undefined);
 		await saveSubmissionDraft(await appDatabase(), participant.id, {
 			project: String(data.get('project') ?? '').slice(0, 200),
 			description: String(data.get('description') ?? '').slice(0, 4000),
@@ -152,6 +166,8 @@ export const actions: Actions = {
 		const picked = String(data.get('hackatime') ?? '');
 		const values = { project, description, repo, demo, hackatime: picked };
 		if (!participant) return fail(401, { ...values, error: 'sign in with hack club first' });
+		// The pick is optional here. Shipping never waits on it, or on address, birthday, or Slack ID.
+		if (databaseConfigured()) await keepRewardChoice(participant.id, data.get('reward')).catch(() => undefined);
 
 		const phase = submitPhase(new Date());
 		const tester = presubmitTester(participant.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));
