@@ -36,10 +36,9 @@
 	<main class="wrap formwrap">
 		<form class="formcard paper join-ask" method="POST">
 			{#if form?.error}<p class="banner strip torn">{form.error}</p>{/if}
-			<p>ten days online, nov 27 to dec 6. you can set up a project now, or come back to it.</p>
+			<p>ten days online, nov 27 to dec 6. you can set up a project now or come back to it.</p>
 			<p class="prizes">
-				top 5 projects, each, get a $300 flight stipend to norway. voted by HQ. unlocks when you buy your ticket.
-				ship 5+ hours, get the cap.
+				code for 5 hours and we send you a cap. the top 5 projects, picked by HQ, each get $300 toward a flight to norway once you get your ticket.
 			</p>
 			<div class="ask">
 				<button class="btn stampbtn inkstamp stamp" name="choice" value="in" type="submit">yes</button>
