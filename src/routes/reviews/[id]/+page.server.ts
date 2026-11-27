@@ -7,7 +7,7 @@ import { canAct } from '#lib/server/access.ts';
 import { appDatabase, databaseConfigured, withTransaction } from '#lib/server/app-db.ts';
 import { currentAdminView, enforceOwner, enforceStaff } from '#lib/server/admin.ts';
 import { fetchHackatimeProjects, formatHours } from '#lib/server/hackatime.ts';
-import { flagTesterSubmissions, getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview } from '#lib/server/northern-store.ts';
+import { flagTesterSubmissions, getSubmission, latestChecks, latestOutbox, listReviews, participantForSubmission, readHackatimeConnection, recordReview, syncHourBalance } from '#lib/server/northern-store.ts';
 import { presubmitTester } from '#lib/northern.ts';
 import { reviewSignalsFor, runSubmissionChecks } from '#lib/server/run-checks.ts';
 import {
@@ -152,6 +152,8 @@ export const actions: Actions = {
 				nextStatus: next.status
 			})
 		);
+		const owner = await participantForSubmission(db, id).catch(() => null);
+		if (owner) await syncHourBalance(db, owner.id).catch(() => undefined);
 		if (airtableEligible(next.stage, next.status)) await pushOutbox(id);
 		redirect(303, `/reviews/${id}`);
 	},

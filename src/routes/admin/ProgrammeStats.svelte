@@ -7,6 +7,7 @@
 	const c = $derived(stats.clock.countdown);
 	const s = $derived(stats.submissions);
 	const h = $derived(stats.hours);
+	const r = $derived(stats.rewards);
 	const countryPeak = $derived(Math.max(1, stats.countries.unknown.accounts, ...stats.countries.rows.map((row) => row.accounts)));
 	const hoursPeak = $derived(Math.max(1, ...h.buckets.map((b) => b.count)));
 
@@ -29,6 +30,10 @@
 
 	function turnaround(t: Turnaround): string {
 		return t.n === 0 ? 'no reviews yet' : `median ${duration(t.median)} · average ${duration(t.average)}`;
+	}
+
+	function hrs(value: number | null): string {
+		return value == null ? '—' : `${Math.round(value * 100) / 100}h`;
 	}
 
 	function peak(series: DaySeries): number {
@@ -208,6 +213,37 @@
 			<div class="kv"><span class="k">submitted → final decision ({s.decision.n})</span><span class="v">{turnaround(s.decision)}</span></div>
 			<div class="kv"><span class="k">backlog by age since submitted</span><span class="v">{s.backlog.under1d} under 1 day · {s.backlog.d1to3} 1–3 days · {s.backlog.over3d} over 3 days</span></div>
 			<div class="kv"><span class="k">oldest pending</span><span class="v">{s.backlog.oldestAt ? `${waitAge(s.backlog.oldestAt)} · ${formatEt(s.backlog.oldestAt)}` : 'none'}</span></div>
+		</div>
+	{/if}
+</section>
+
+<section class="card-cream block" aria-label="Cap or prize">
+	<div class="sec-head">
+		<h2>cap or $300</h2>
+		<span class="sub">admins only · banked hours are approved hours on HQ confirmed submissions, synced on load</span>
+	</div>
+	<div class="kv-grid">
+		<div class="kv"><span class="k">picked the cap</span><span class="v big">{r.cap}</span></div>
+		<div class="kv"><span class="k">skipped the cap for the $300</span><span class="v big">{r.prize}</span></div>
+		<div class="kv"><span class="k">joined, no pick yet (counts as cap)</span><span class="v big">{r.none}</span></div>
+		<div class="kv"><span class="k">total banked hours</span><span class="v big">{r.bankedTotal == null ? 'not synced yet' : hrs(r.bankedTotal)}</span></div>
+	</div>
+	{#if r.people.length === 0}
+		<p>no picks or banked hours yet</p>
+	{:else}
+		<div class="table-wrap">
+			<table class="adm mobile-cards">
+				<thead><tr><th>Email</th><th>Pick</th><th>Banked hours</th></tr></thead>
+				<tbody>
+					{#each r.people as person, i (i)}
+						<tr>
+							<td data-label="Email">{person.email}</td>
+							<td data-label="Pick">{person.choice === 'prize' ? 'skip cap, $300' : person.choice === 'cap' ? 'cap' : 'no pick'}</td>
+							<td data-label="Banked hours" class="mono">{hrs(person.hours)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 	{/if}
 </section>

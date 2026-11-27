@@ -3,6 +3,7 @@
 	import { displayName } from '#lib/participant-identity.ts';
 	import type { PageProps } from './$types';
 	import PublicNav from '../PublicNav.svelte';
+	import RewardPick from '../RewardPick.svelte';
 	import '../hackathon.css';
 
 	let { data, form }: PageProps = $props();
@@ -92,7 +93,7 @@
 			<h1>ship your project</h1>
 			<div>
 				<p class="sub strip torn">
-					ship any software project, at least 5 hours long, with a playable url and a github link. {CHALLENGE_SPAN}.
+					ship any software project, at least 5 hours long, with a playable url and a github link. get the cap, or skip it and stay in the running for the $300. {CHALLENGE_SPAN}.
 					{CHALLENGE_CLOSES}.
 				</p>
 			</div>
@@ -182,6 +183,9 @@
 						>
 					</div>
 				</div>
+				<div class="reward-slot">
+					<RewardPick choice={data.reward} disabled={!data.rewardOpen} nudge={Boolean(data.tracker?.eligible)} />
+				</div>
 				<div class="ship">
 					<button class="btn stampbtn inkstamp stamp" type="submit" disabled={!data.allowed}>ship it</button>
 					<p>
@@ -200,3 +204,9 @@
 	</main>
 	<div class="foot-space" aria-hidden="true"></div>
 </div>
+
+<style>
+	.reward-slot {
+		margin: 22px 0 0;
+	}
+</style>

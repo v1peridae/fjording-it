@@ -110,7 +110,7 @@
 					<p class="amt">$300</p>
 					<p class="top">top 5 projects, each</p>
 					<p class="what">flight stipend to norway</p>
-					<p class="vote">top 5 projects voted by HQ</p>
+					<p class="vote">top 5 voted by HQ, if you skip the cap</p>
 					<p class="fine">unlocks when you buy your ticket.</p>
 				</div>
 				<div class="cap torn">
@@ -124,7 +124,7 @@
 					<div class="back">
 						<span class="mini-stamp stamp"><img src="/hackathon/goose-2.png" alt="" /></span>
 						<p class="what">ship 5+ hours, get the cap</p>
-						<p>everyone who ships 5 or more tracked hours gets one.</p>
+						<p>ship 5 or more tracked hours and get one, or skip it and stay in the running for the $300.</p>
 						<i class="rule"></i>
 						<i class="rule"></i>
 					</div>

@@ -9,7 +9,7 @@ import { beginHackClubLogin, currentAdminView, signOutAdmin, takeFlash } from '#
 import { appDatabase, databaseConfigured } from '#lib/server/app-db.ts';
 import { codingWindow, etDayKey } from '#lib/coding-days.ts';
 import { refreshCodingDays } from '#lib/server/coding-dau.ts';
-import { codingSnapshot, flagTesterSubmissions, listReviewers, loadAdminHome, loadParticipantFunnel, loadProgrammeRows, reviewerStats } from '#lib/server/northern-store.ts';
+import { codingSnapshot, flagTesterSubmissions, listReviewers, loadAdminHome, loadParticipantFunnel, loadProgrammeRows, reviewerStats, syncAllHourBalances } from '#lib/server/northern-store.ts';
 import { buildProgrammeStats, type ProgrammeStats } from '#lib/programme-stats.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -69,6 +69,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		let programme: ProgrammeStats | null = null;
 		let programmeError: string | null = null;
 		try {
+			await syncAllHourBalances(db).catch(() => undefined);
 			programme = buildProgrammeStats({ ...(await loadProgrammeRows(db)), testerEmails: privateEnv('PRESUBMIT_TESTER_EMAILS') });
 		} catch {
 			programmeError = "couldn't load programme stats";
