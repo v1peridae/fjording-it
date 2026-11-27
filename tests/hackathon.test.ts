@@ -25,7 +25,7 @@ test('public hackathon nav stays free of admin links', () => {
 	assert.equal(signedIn.staff, null);
 	assert.deepEqual(
 		signedIn.public.map((link) => link.label),
-		['The Northern Challenge', 'prizes', 'rules', 'submit']
+		['The Northern Challenge', 'prizes', 'rules', 'submit', 'your details']
 	);
 
 	assert.equal(hackathonNav('in').staff, 'owner');

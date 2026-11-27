@@ -16,12 +16,14 @@ import {
 	saveSubmissionDraft,
 	isUniqueViolation,
 	NORTHERN_SLUG,
+	ownSubmission,
 	participantProject,
 	readHackatimeConnection
 } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import { sniffImage } from '#lib/northern.ts';
 import { CHALLENGE_SPAN } from '#lib/hackathon.ts';
+import { lockReason } from '#lib/participant-edit.ts';
 import { canSubmit, cleanDescription, cleanProjectName, hoursEligible, httpUrl, presubmitTester, submitPhase } from '#lib/northern.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -62,6 +64,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		owned = await participantProject(db, participant.id).catch(() => null);
 		draft = await readSubmissionDraft(db, participant.id).catch(() => null);
 	}
+	const mine = participant && databaseConfigured() ? await ownSubmission(await appDatabase(), participant.id).catch(() => null) : null;
 	if (participant && configured && databaseConfigured()) {
 		try {
 			const live = await liveProjects(participant.email, tester);
@@ -112,7 +115,9 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 		ticket,
 		notice,
 		shipped,
-		draft
+		draft,
+		shippedAlready: Boolean(mine),
+		entryLocked: mine ? lockReason(mine.stage, mine.status) : null
 	};
 };
 

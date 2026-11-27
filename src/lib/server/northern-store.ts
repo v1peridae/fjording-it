@@ -1,4 +1,5 @@
 import { WINDOW_END, WINDOW_START } from '../coding-days.ts';
+import { ownProjectUpdateSql, ownSubmissionUpdateSql } from '../participant-edit.ts';
 import { buildAdminHome } from '../admin-charts.ts';
 import type { ParticipantIdentity } from '../participant-identity.ts';
 import type { Sql } from './db.ts';
@@ -100,7 +101,10 @@ export async function upsertParticipant(db: Sql, identity: ParticipantIdentity):
 		 ON CONFLICT (hack_club_id) DO UPDATE SET
 			email = excluded.email,
 			email_verified = excluded.email_verified,
-			name = excluded.name,
+			name = CASE
+				WHEN participants.name_edited THEN participants.name
+				ELSE excluded.name
+			END,
 			first_name = excluded.first_name,
 			last_name = excluded.last_name,
 			slack_id = excluded.slack_id,
@@ -185,6 +189,105 @@ export async function saveParticipantProject(
 		[input.participantId, input.name, input.description, input.hackatimeProject]
 	);
 	await setChallengeChoice(db, input.participantId, 'in');
+}
+
+export async function saveOwnName(db: Sql, participantId: number, name: string | null) {
+	await db.query(`UPDATE participants SET name = $2, name_edited = true, updated_at = now() WHERE id = $1`, [
+		participantId,
+		name
+	]);
+}
+
+export type OwnSubmission = {
+	id: number;
+	projectName: string;
+	description: string;
+	repoUrl: string;
+	demoUrl: string;
+	hackatimeProject: string;
+	hasScreenshot: boolean;
+	stage: string;
+	status: string;
+	reviewCount: number;
+	airtableRecordId: string | null;
+};
+
+export async function ownSubmission(db: Sql, participantId: number, challenge = NORTHERN_SLUG): Promise<OwnSubmission | null> {
+	const { rows } = await db.query(
+		`SELECT s.id, s.project_name, s.description, s.repo_url, s.demo_url, s.hackatime_project,
+		        s.screenshot IS NOT NULL AS has_screenshot, s.stage, s.status, s.airtable_record_id,
+		        (SELECT count(*)::int FROM submission_reviews r WHERE r.submission_id = s.id) AS review_count
+		 FROM submissions s
+		 WHERE s.participant_id = $1 AND s.challenge = $2
+		 ORDER BY s.created_at DESC
+		 LIMIT 1`,
+		[participantId, challenge]
+	);
+	const row = rows[0];
+	if (!row) return null;
+	return {
+		id: Number(row.id),
+		projectName: String(row.project_name),
+		description: String(row.description),
+		repoUrl: String(row.repo_url),
+		demoUrl: String(row.demo_url),
+		hackatimeProject: String(row.hackatime_project),
+		hasScreenshot: row.has_screenshot === true,
+		stage: String(row.stage),
+		status: String(row.status),
+		reviewCount: Number(row.review_count ?? 0),
+		airtableRecordId: typeof row.airtable_record_id === 'string' ? row.airtable_record_id : null
+	};
+}
+
+export async function updateOwnProject(
+	db: Sql,
+	input: { participantId: number; name: string; description: string; hackatimeProject: string }
+): Promise<boolean> {
+	const { rows } = await db.query(ownProjectUpdateSql(), [
+		input.participantId,
+		input.name,
+		input.description,
+		input.hackatimeProject
+	]);
+	return rows.length > 0;
+}
+
+export async function updateOwnSubmission(
+	db: Sql,
+	input: {
+		participantId: number;
+		submissionId: number;
+		projectName: string;
+		description: string;
+		repoUrl: string;
+		demoUrl: string;
+		hackatimeProject: string;
+		hackatimeSeconds: number | null;
+		screenshot: Uint8Array | null;
+		screenshotType: string | null;
+		reopen: boolean;
+	}
+): Promise<{ id: number; airtableRecordId: string | null } | null> {
+	const { rows } = await db.query(ownSubmissionUpdateSql(), [
+		input.submissionId,
+		input.participantId,
+		input.projectName,
+		input.description,
+		input.repoUrl,
+		input.demoUrl,
+		input.hackatimeProject,
+		input.hackatimeSeconds,
+		input.screenshot,
+		input.screenshotType,
+		input.reopen
+	]);
+	const row = rows[0];
+	if (!row) return null;
+	return {
+		id: Number(row.id),
+		airtableRecordId: typeof row.airtable_record_id === 'string' ? row.airtable_record_id : null
+	};
 }
 
 export async function codingSnapshot(db: Sql, today: string) {

@@ -19,8 +19,9 @@ export function hackathonNav(
 		href: `/hackathon/auth/login?from=${encodeURIComponent(origin)}`,
 		label: 'sign in'
 	};
+	const details: HackathonLink = { href: '/hackathon/details', label: 'your details' };
 	return {
 		staff,
-		public: participant ? PUBLIC : [...PUBLIC, signIn]
+		public: participant ? [...PUBLIC, details] : [...PUBLIC, signIn]
 	};
 }

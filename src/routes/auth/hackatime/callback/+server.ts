@@ -17,7 +17,7 @@ export const prerender = false;
 const STATE_COOKIE = 'hackatime_oauth';
 
 function back(status: string, next = '/hackathon/submit') {
-	const path = next === '/hackathon/start' ? next : '/hackathon/submit';
+	const path = next === '/hackathon/start' || next === '/hackathon/details' ? next : '/hackathon/submit';
 	return new Response(null, {
 		status: 303,
 		headers: { location: `${path}?hackatime=${status}` }
@@ -34,7 +34,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		secure: url.protocol === 'https:'
 	});
 
-	const next = sealed?.back === '/hackathon/start' ? '/hackathon/start' : '/hackathon/submit';
+	const next = sealed?.back === '/hackathon/start' || sealed?.back === '/hackathon/details' ? sealed.back : '/hackathon/submit';
 	if (url.searchParams.get('error')) return back('failed', next);
 
 	const client = hackatimeCredentials({
