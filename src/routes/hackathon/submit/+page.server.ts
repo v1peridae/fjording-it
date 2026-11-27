@@ -21,6 +21,7 @@ import {
 } from '#lib/server/northern-store.ts';
 import { runSubmissionChecks } from '#lib/server/run-checks.ts';
 import { sniffImage } from '#lib/northern.ts';
+import { CHALLENGE_SPAN } from '#lib/hackathon.ts';
 import { canSubmit, cleanDescription, cleanProjectName, hoursEligible, httpUrl, presubmitTester, submitPhase } from '#lib/northern.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -155,7 +156,7 @@ export const actions: Actions = {
 		const phase = submitPhase(new Date());
 		const tester = presubmitTester(participant.email, privateEnv('PRESUBMIT_TESTER_EMAILS'));
 		if (!canSubmit(phase, access.admin || tester)) {
-			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : 'Nov 27 to Dec 6' });
+			return fail(403, { ...values, error: phase === 'closed' ? "that's a wrap" : CHALLENGE_SPAN });
 		}
 
 		const name = cleanProjectName(project);

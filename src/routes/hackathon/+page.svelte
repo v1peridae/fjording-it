@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { countdownAt } from '#lib/hackathon.ts';
+	import { CHALLENGE_CLOSES, CHALLENGE_SPAN, countdownAt } from '#lib/hackathon.ts';
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';
 	import AdminNav from '#lib/AdminNav.svelte';
@@ -23,7 +23,7 @@
 
 <svelte:head>
 	<title>fjording it: The Northern Challenge</title>
-	<meta name="description" content="Nov 27 to Dec 6. closes Sun Dec 6 at 11:59pm ET." />
+	<meta name="description" content="{CHALLENGE_SPAN}. {CHALLENGE_CLOSES}." />
 	<meta name="robots" content="noindex, nofollow" />
 	<link
 		rel="preload"
@@ -70,9 +70,9 @@
 			<div><span class="subline strip torn">The Northern Challenge</span></div>
 			<div class="row">
 				<div class="when strip torn">
-					<span class="k">online, 10 days</span>
-					<b>Nov 27 to Dec 6</b>
-					<span class="close">closes Sun Dec 6 at 11:59pm ET</span>
+					<span class="k">live now</span>
+					<b>ends dec 6</b>
+					<span class="close">{CHALLENGE_CLOSES}</span>
 				</div>
 				<div class="ticket paper" aria-live="polite">
 					<p class="lbl">{view.label}</p>

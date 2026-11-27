@@ -65,9 +65,11 @@ test('coding time on a linked project counts for that ET day', () => {
 	assert.equal(other?.length, 0);
 	const window = codingWindow([{ day: '2026-11-27', people: 2, seconds: 7200 }], '2026-11-27');
 	assert.equal(window.today, 2);
-	assert.equal(window.days[0]?.people, 2);
-	assert.equal(window.days[0]?.hours, 2);
-	assert.equal(window.days.length, 10);
+	assert.equal(window.days[0]?.day, '2026-11-26');
+	assert.equal(window.days[0]?.people, 0);
+	assert.equal(window.days[1]?.people, 2);
+	assert.equal(window.days[1]?.hours, 2);
+	assert.equal(window.days.length, 11);
 });
 
 test('the project picker uses the all-time list and skips an empty first response', async () => {

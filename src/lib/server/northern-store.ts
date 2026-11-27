@@ -1,3 +1,4 @@
+import { WINDOW_END, WINDOW_START } from '../coding-days.ts';
 import { buildAdminHome } from '../admin-charts.ts';
 import type { ParticipantIdentity } from '../participant-identity.ts';
 import type { Sql } from './db.ts';
@@ -191,8 +192,9 @@ export async function codingSnapshot(db: Sql, today: string) {
 		        count(*) FILTER (WHERE seconds > 0)::int AS people,
 		        COALESCE(sum(seconds), 0)::int AS seconds
 		 FROM coding_days
-		 WHERE day BETWEEN '2026-11-27' AND '2026-12-06'
-		 GROUP BY day`
+		 WHERE day BETWEEN $1::date AND $2::date
+		 GROUP BY day`,
+		[WINDOW_START, WINDOW_END]
 	);
 	const todayCount = await db.query(
 		`SELECT count(*)::int AS count FROM coding_days WHERE day = $1::date AND seconds > 0`,
@@ -218,11 +220,11 @@ export async function peopleAtFiveHours(db: Sql): Promise<number> {
 		`SELECT count(*)::int AS n FROM (
 			SELECT participant_id
 			FROM coding_days
-			WHERE day BETWEEN '2026-11-27' AND '2026-12-06'
+			WHERE day BETWEEN $2::date AND $3::date
 			GROUP BY participant_id
 			HAVING sum(seconds) >= $1
 		) reached`,
-		[5 * 3600]
+		[5 * 3600, WINDOW_START, WINDOW_END]
 	);
 	return Number(rows[0]?.n ?? 0);
 }
@@ -271,8 +273,8 @@ export async function codingSecondsInWindow(db: Sql, participantId: number): Pro
 	const { rows } = await db.query(
 		`SELECT COALESCE(sum(seconds), 0)::int AS seconds, count(*)::int AS n
 		 FROM coding_days
-		 WHERE participant_id = $1 AND day BETWEEN '2026-11-27' AND '2026-12-06'`,
-		[participantId]
+		 WHERE participant_id = $1 AND day BETWEEN $2::date AND $3::date`,
+		[participantId, WINDOW_START, WINDOW_END]
 	);
 	if (!rows[0] || Number(rows[0].n) === 0) return null;
 	return Number(rows[0].seconds);

@@ -19,11 +19,9 @@ import {
 	SESSION_MS,
 	verifyIdToken
 } from './admin-auth.ts';
-import { currentAdminView, enforceOwner } from './admin.ts';
+import { currentAdminView } from './admin.ts';
 import { appDatabase } from './app-db.ts';
 import { participantByHackClubId, upsertParticipant, type ParticipantRow } from './northern-store.ts';
-import { northernIsPublic } from '../northern-access.ts';
-
 const SESSION_COOKIE = 'participant_session';
 const OAUTH_COOKIE = 'participant_oauth';
 const SESSION_PATHS = ['/hackathon', '/auth'] as const;
@@ -79,9 +77,7 @@ export function signOutParticipant(cookies: Cookies, url: URL) {
 
 export async function northernPageAllowed(cookies: Cookies, url: URL) {
 	const view = await currentAdminView(cookies, url);
-	if (northernIsPublic(privateEnv('NORTHERN_PUBLIC'))) return { admin: view.status === 'in', view };
-	enforceOwner(view.status, url);
-	return { admin: true, view };
+	return { admin: view.status === 'in', view };
 }
 
 export async function beginParticipantLogin(options: { cookies: Cookies; url: URL }): Promise<void> {

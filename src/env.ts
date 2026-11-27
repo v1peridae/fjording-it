@@ -46,7 +46,7 @@ export const variables = defineEnvVars({
 		schema: optional
 	},
 	NORTHERN_PUBLIC: {
-		description: 'Set to true to open /hackathon and submit to everyone. Default false keeps them admin-only. Admins can still test the participant flow.',
+		description: 'Unused. The Northern Challenge is public, so this flag no longer hides /hackathon or submit.',
 		schema: optional
 	},
 	PRESUBMIT_TESTER_EMAILS: {

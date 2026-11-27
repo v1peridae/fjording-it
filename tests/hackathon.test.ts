@@ -34,23 +34,23 @@ test('public hackathon nav stays free of admin links', () => {
 	assert.ok(!labels('reviewer').includes('Reviews'));
 });
 
-test('hackathon stays hidden unless the visitor is an allowed admin', () => {
+test('the hackathon page is open to signed-out visitors', () => {
 	assert.equal(hackathonAllowed('in'), true);
-	assert.equal(hackathonAllowed('out'), false);
-	assert.equal(hackathonAllowed('denied'), false);
+	assert.equal(hackathonAllowed('out'), true);
+	assert.equal(hackathonAllowed('denied'), true);
 });
 
 test('countdown runs to kickoff, then to 11:59pm ET on dec 6', () => {
 	const start = hackathonKickoff();
 	const end = hackathonDeadline();
-	assert.equal(start.toISOString(), '2026-11-27T05:00:00.000Z');
+	assert.equal(start.toISOString(), '2026-11-27T02:00:00.000Z');
 	assert.equal(end.toISOString(), '2026-12-07T04:59:00.000Z');
 
 	const before = countdownAt(new Date('2026-11-25T05:00:00.000Z'), start, end);
 	assert.equal(before.phase, 'until-start');
 	assert.equal(before.label, 'kicks off in');
-	assert.equal(before.days, '02');
-	assert.equal(before.hours, '00');
+	assert.equal(before.days, '01');
+	assert.equal(before.hours, '21');
 	assert.equal(before.minutes, '00');
 
 	const atStart = countdownAt(start, start, end);
