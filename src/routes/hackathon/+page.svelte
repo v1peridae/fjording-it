@@ -90,7 +90,7 @@
 			{#if data.notice}
 				<p class="banner strip torn">{data.notice}</p>
 			{:else if data.participantLabel}
-				<p class="yourein strip torn">you're in, {data.participantLabel}.</p>
+				<p class="yourein strip torn">you're in, {data.participantLabel}. <a href="/hackathon/details">your details</a></p>
 			{/if}
 			{#if data.showJoin}
 				<form class="join" method="POST" action="?/join">

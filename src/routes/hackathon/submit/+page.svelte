@@ -90,6 +90,12 @@
 			</div>
 			<div><a class="back strip torn" href="/hackathon">← back to the hackathon</a></div>
 			<h1>ship your project</h1>
+			{#if data.shippedAlready}
+				<p class="sub strip torn">
+					{data.entryLocked ?? 'you already shipped.'}
+					<a href="/hackathon/details"> your details</a>
+				</p>
+			{/if}
 			<div>
 				<p class="sub strip torn">
 					ship any software project, at least 5 hours long, with a playable url and a github link. {CHALLENGE_SPAN}.

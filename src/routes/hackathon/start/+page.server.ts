@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	if (!participant) redirect(303, '/hackathon/auth/login?from=/hackathon/start');
 	if (databaseConfigured()) {
 		const existing = await participantProject(await appDatabase(), participant.id).catch(() => null);
-		if (existing) redirect(303, '/hackathon');
+		if (existing) redirect(303, '/hackathon/details');
 	}
 	const configured = Boolean(hackatimeCredentials({
 		HACKATIME_CLIENT_ID: privateEnv('HACKATIME_CLIENT_ID'),

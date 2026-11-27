@@ -63,7 +63,14 @@
 			{:else}
 				<p class="v">{data.hours} so far</p>
 			{/if}
-			<p class="next"><a href="/hackathon/start">set up your project</a> · <a href="/hackathon/submit">submit</a></p>
+			<p class="next">
+				{#if data.linked}
+					<a href="/hackathon/details">your details</a>
+				{:else}
+					<a href="/hackathon/start">set up your project</a>
+				{/if}
+				· <a href="/hackathon/submit">submit</a>
+			</p>
 		</section>
 	</main>
 </div>

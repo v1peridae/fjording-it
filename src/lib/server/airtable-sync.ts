@@ -1,5 +1,6 @@
 import { privateEnv } from '#lib/server/private-env.ts';
 import { AIRTABLE_FIELDS, airtableDate, airtableRecordFields, northernAirtableConfigured } from '../airtable-fields.ts';
+import { editSyncMethod } from '../participant-edit.ts';
 import { appDatabase } from './app-db.ts';
 import { latestOutbox, listReviews, markOutbox, readHackatimeConnection, rememberAirtableRecord, submissionScreenshot } from './northern-store.ts';
 
@@ -37,6 +38,24 @@ export async function pushOutbox(submissionId: number): Promise<void> {
 		}
 	}
 	await markOutbox(db, outbox.id, { status: 'error', lastError });
+}
+
+/** Patch the YSWS record this submission already has. Never creates a new one. */
+export async function patchSyncedSubmission(submissionId: number, recordId: string | null): Promise<boolean> {
+	if (editSyncMethod(recordId) !== 'PATCH' || !recordId) return false;
+	const config = northernAirtableConfigured({
+		token: privateEnv('NORTHERN_AIRTABLE_TOKEN') || privateEnv('AIRTABLE_TOKEN'),
+		baseId: privateEnv('NORTHERN_AIRTABLE_BASE_ID'),
+		table: privateEnv('NORTHERN_AIRTABLE_TABLE'),
+		signupsBaseId: privateEnv('AIRTABLE_BASE_ID'),
+		signupsTable: privateEnv('AIRTABLE_TABLE')
+	});
+	if ('error' in config) return false;
+	const submission = await loadForSync(submissionId);
+	if (!submission) return false;
+	const id = await upsertRecord(config, recordId, submission.fields);
+	await rememberAirtableRecord(await appDatabase(), submissionId, id);
+	return true;
 }
 
 function textOrEmpty(value: unknown): string | null {
