@@ -139,7 +139,7 @@ export const actions: Actions = {
 		});
 		return { saved: true };
 	},
-	default: async ({ request, cookies, url }) => {
+	ship: async ({ request, cookies, url }) => {
 		const access = await northernPageAllowed(cookies, url);
 		const participant = await currentParticipant(cookies, url);
 

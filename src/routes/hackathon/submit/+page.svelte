@@ -99,7 +99,7 @@
 	</header>
 
 	<main class="wrap formwrap">
-		<form class="formcard paper" method="POST" enctype="multipart/form-data" oninput={keepDraft} onchange={keepDraft} onfocusout={flushDraft}>
+		<form class="formcard paper" method="POST" action="?/ship" enctype="multipart/form-data" oninput={keepDraft} onchange={keepDraft} onfocusout={flushDraft}>
 			{#if data.phase === 'early'}
 				<p class="banner strip torn">Nov 27 to Dec 6 <span class="close">closes Sun Dec 6 at 11:59pm ET</span></p>
 			{/if}
