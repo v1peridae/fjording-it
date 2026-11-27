@@ -5,7 +5,8 @@ import {
 	countdownAt,
 	hackathonAllowed,
 	hackathonDeadline,
-	hackathonKickoff
+	hackathonKickoff,
+	timeUntilDeadline
 } from '../src/lib/hackathon.ts';
 import { hackathonNav } from '../src/lib/hackathon-nav.ts';
 
@@ -59,6 +60,11 @@ test('countdown runs to kickoff, then to 11:59pm ET on dec 6', () => {
 	const atEnd = countdownAt(end, start, end);
 	assert.equal(atEnd.phase, 'done');
 	assert.equal(atEnd.label, "that's a wrap");
+
+	const beforeKickoff = timeUntilDeadline(new Date('2026-11-26T05:00:00.000Z'));
+	assert.equal(beforeKickoff.phase, 'until-end');
+	assert.equal(beforeKickoff.label, 'time left');
+	assert.equal(timeUntilDeadline(end).phase, 'done');
 });
 
 test('a session handle is shown only when the cookie actually has one', async () => {

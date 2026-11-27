@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders, url }) => {
 	if (databaseConfigured()) {
 		const db = await appDatabase();
 		const choice = await challengeChoice(db, participant.id);
-		if (choice === 'later') redirect(303, '/hackathon');
+		if (choice === 'later') redirect(303, '/hackathon/you');
 		if (choice === 'in') {
 			const project = await participantProject(db, participant.id);
 			redirect(303, project ? '/hackathon' : '/hackathon/start');
@@ -30,6 +30,6 @@ export const actions: Actions = {
 		const choice = String((await request.formData()).get('choice') ?? '');
 		if (choice !== 'in' && choice !== 'later') return fail(400, { error: 'pick yes or not now' });
 		if (databaseConfigured()) await setChallengeChoice(await appDatabase(), participant.id, choice);
-		redirect(303, choice === 'in' ? '/hackathon/start' : '/hackathon');
+		redirect(303, choice === 'in' ? '/hackathon/start' : '/hackathon/you');
 	}
 };

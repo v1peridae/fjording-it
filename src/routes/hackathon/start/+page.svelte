@@ -20,6 +20,17 @@
 </svelte:head>
 
 <div class="hackathon submit-page">
+	<picture class="bg">
+		<source media="(max-width: 760px)" srcset="/hackathon/lauklines-3600.jpg" />
+		<img
+			src="/hackathon/lauklines-3600.jpg"
+			srcset="/hackathon/lauklines-2400.jpg 2400w, /hackathon/lauklines-3600.jpg 3600w"
+			sizes="100vw"
+			width="3600"
+			height="2400"
+			alt="northern lights over a fjord at lauklines, norway"
+		/>
+	</picture>
 	<div class="topbar torn-bottom">
 		<div class="wrap">
 			<PublicNav home="/hackathon" links={[{ href: '/hackathon#rules', label: 'rules' }]} label={data.label} />
@@ -79,7 +90,7 @@
 			</div>
 			<div class="ship">
 				<button class="btn stampbtn inkstamp stamp" type="submit">save project</button>
-				<p><a href="/hackathon">do this later</a></p>
+				<p><a href="/hackathon/you">do this later</a></p>
 			</div>
 		</form>
 	</main>

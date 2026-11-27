@@ -62,6 +62,11 @@ function pad(value: number): string {
 	return String(value).padStart(2, '0');
 }
 
+/** Always the time remaining until 11:59pm ET on Dec 6, even before kickoff. */
+export function timeUntilDeadline(now: Date): Countdown {
+	return countdownAt(now, new Date(0), hackathonDeadline());
+}
+
 export function countdownAt(now: Date, start = hackathonKickoff(), end = hackathonDeadline()): Countdown {
 	if (now.getTime() >= end.getTime()) return { phase: 'done', label: "that's a wrap" };
 

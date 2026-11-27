@@ -14,7 +14,7 @@ test('sign-in lands on the hackathon page', () => {
 test('homepage sign-in asks before setup, and a hackathon sign-in does not', () => {
 	assert.equal(afterSignIn({ ok: true, from: '/', choice: null, hasProject: false }), '/hackathon/join');
 	assert.equal(afterSignIn({ ok: true, from: '/', choice: 'in', hasProject: false }), '/hackathon/start');
-	assert.equal(afterSignIn({ ok: true, from: '/', choice: 'later', hasProject: false }), '/hackathon');
+	assert.equal(afterSignIn({ ok: true, from: '/', choice: 'later', hasProject: false }), '/hackathon/you');
 	assert.equal(afterSignIn({ ok: true, from: '/hackathon', choice: null, hasProject: false }), '/hackathon/start');
 	assert.equal(afterSignIn({ ok: true, from: '/hackathon/submit', choice: null, hasProject: true }), '/hackathon');
 	assert.equal(afterSignIn({ ok: false, from: '/', choice: null, hasProject: false }), '/hackathon?signin=failed');

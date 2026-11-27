@@ -212,6 +212,61 @@ export async function codingSnapshot(db: Sql, today: string) {
 	};
 }
 
+/** People whose recorded challenge-window hours already add up to 5. */
+export async function peopleAtFiveHours(db: Sql): Promise<number> {
+	const { rows } = await db.query(
+		`SELECT count(*)::int AS n FROM (
+			SELECT participant_id
+			FROM coding_days
+			WHERE day BETWEEN '2026-11-27' AND '2026-12-06'
+			GROUP BY participant_id
+			HAVING sum(seconds) >= $1
+		) reached`,
+		[5 * 3600]
+	);
+	return Number(rows[0]?.n ?? 0);
+}
+
+export type SubmissionDraft = {
+	project: string;
+	description: string;
+	repo: string;
+	demo: string;
+};
+
+export async function readSubmissionDraft(db: Sql, participantId: number): Promise<SubmissionDraft | null> {
+	const { rows } = await db.query(
+		`SELECT project, description, repo, demo FROM submission_drafts WHERE participant_id = $1`,
+		[participantId]
+	);
+	const row = rows[0];
+	if (!row) return null;
+	return {
+		project: String(row.project ?? ''),
+		description: String(row.description ?? ''),
+		repo: String(row.repo ?? ''),
+		demo: String(row.demo ?? '')
+	};
+}
+
+export async function saveSubmissionDraft(db: Sql, participantId: number, draft: SubmissionDraft) {
+	await db.query(
+		`INSERT INTO submission_drafts (participant_id, project, description, repo, demo)
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (participant_id) DO UPDATE SET
+		   project = excluded.project,
+		   description = excluded.description,
+		   repo = excluded.repo,
+		   demo = excluded.demo,
+		   updated_at = now()`,
+		[participantId, draft.project, draft.description, draft.repo, draft.demo]
+	);
+}
+
+export async function clearSubmissionDraft(db: Sql, participantId: number) {
+	await db.query(`DELETE FROM submission_drafts WHERE participant_id = $1`, [participantId]);
+}
+
 export async function codingSecondsInWindow(db: Sql, participantId: number): Promise<number | null> {
 	const { rows } = await db.query(
 		`SELECT COALESCE(sum(seconds), 0)::int AS seconds, count(*)::int AS n
