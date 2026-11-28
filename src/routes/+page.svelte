@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { checkSignupEmail } from '#lib/signup-email.ts';
 	import type { PageProps } from './$types';
 	let { data, form }: PageProps = $props();
 	let sending = $state(false);
+	let clientError = $state('');
 </script>
 
 <svelte:head>
@@ -61,7 +63,16 @@
 				<form
 					class="flex flex-col gap-2 md:flex-row md:gap-[1.2cqw]"
 					method="POST"
-					use:enhance={() => {
+					use:enhance={({ formData, cancel }) => {
+						clientError = '';
+						if (!formData.get('website')) {
+							const checked = checkSignupEmail(String(formData.get('email') ?? ''));
+							if (!checked.ok) {
+								clientError = checked.error;
+								cancel();
+								return;
+							}
+						}
 						sending = true;
 						return async ({ update }) => {
 							await update();
@@ -91,9 +102,9 @@
 					</button>
 				</form>
 			{/if}
-			{#if form?.error}
+			{#if clientError || form?.error}
 				<p class="mt-2.5 text-[14px] text-rust md:mt-[0.8cqw] md:text-[max(1.4cqw,13px)]">
-					{form.error}
+					{clientError || form?.error}
 				</p>
 			{:else if data.signups !== null}
 				<p class="mt-3 text-[22px] text-balance md:mt-[0.8cqw] md:text-[max(2.2cqw,17px)]">
