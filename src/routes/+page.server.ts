@@ -2,9 +2,9 @@ import { fail } from '@sveltejs/kit';
 import { privateEnv } from '#lib/server/private-env.ts';
 import { beginHackClubLogin } from '#lib/server/admin.ts';
 import { isAdminEntryEmail } from '#lib/signup-stats.ts';
+import { checkSignupEmail } from '#lib/signup-email.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-const EMAIL = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 const LIMIT = 20;
 const WINDOW = 10 * 60 * 1000;
 
@@ -114,18 +114,13 @@ export const load: PageServerLoad = async () => {
 export const actions: Actions = {
 	default: async ({ request, getClientAddress, cookies, url }) => {
 		const data = await request.formData();
-		const email = String(data.get('email') ?? '')
-			.trim()
-			.toLowerCase()
-			.slice(0, 255);
-
 		if (data.get('website')) {
 			return { success: true };
 		}
 
-		if (email.length > 254 || !EMAIL.test(email)) {
-			return fail(400, { email, error: "that doesn't look like an email" });
-		}
+		const checked = checkSignupEmail(String(data.get('email') ?? ''));
+		if (!checked.ok) return fail(400, { email: checked.email, error: checked.error });
+		const email = checked.email;
 
 		if (isAdminEntryEmail(email)) {
 			const started = await beginHackClubLogin({
